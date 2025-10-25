@@ -14,8 +14,8 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nombre;
-    private String password;
     private String email;
+    private String password;
 
     @OneToMany(mappedBy = "vendedor")
     private List<Publicacion> publicaciones = new ArrayList<>();
