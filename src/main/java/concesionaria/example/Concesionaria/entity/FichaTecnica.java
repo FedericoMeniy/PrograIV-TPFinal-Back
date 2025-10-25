@@ -12,4 +12,10 @@ public class FichaTecnica {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String motor;
+    private String combustible;
+    private String caja;
+    private String puertas;
+    private String potencia;
+
 }
