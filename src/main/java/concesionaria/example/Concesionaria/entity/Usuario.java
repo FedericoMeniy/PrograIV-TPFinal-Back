@@ -15,6 +15,7 @@ public class Usuario {
     private Long id;
     private String nombre;
     private String password;
+    private String email;
 
     @OneToMany(mappedBy = "vendedor")
     private List<Publicacion> publicaciones = new ArrayList<>();
