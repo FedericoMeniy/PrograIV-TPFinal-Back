@@ -4,6 +4,7 @@ import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired; // 1. IMPORTAR
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UsuarioController {
 
     private UsuarioService usuarioService;
+
+
+    @Autowired
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     @PostMapping("/registro")
     public ResponseEntity<?> registrarUsuario(@Valid @RequestBody RegistroUsuarioDto registroUsuarioDto){
