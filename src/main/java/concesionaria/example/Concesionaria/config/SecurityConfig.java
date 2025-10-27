@@ -42,6 +42,12 @@ public class SecurityConfig {
                         // 7. PERMITE el registro
                         .requestMatchers("/usuario/registro").permitAll()
 
+                        // 7.1 AÑADIR PERMISO PARA LOGIN
+                        .requestMatchers("/usuario/login").permitAll()
+
+                        // Permite peticiones PUT a /usuario/ (ej. /usuario/1, /usuario/2, etc.)
+                        .requestMatchers(HttpMethod.PUT, "/usuario/**").permitAll()
+
                         // 8. (Opcional) Protege el resto de endpoints
                         // .anyRequest().authenticated()
 
