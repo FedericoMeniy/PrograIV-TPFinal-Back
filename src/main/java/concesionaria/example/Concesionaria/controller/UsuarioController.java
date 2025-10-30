@@ -2,12 +2,18 @@ package concesionaria.example.Concesionaria.controller;
 
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
 import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
+import concesionaria.example.Concesionaria.dto.JwtResponseDTO; // Importar
 import concesionaria.example.Concesionaria.entity.Usuario;
+import concesionaria.example.Concesionaria.service.JwtService; // Importar
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired; // 1. IMPORTAR
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager; // Importar
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken; // Importar
+import org.springframework.security.core.Authentication; // Importar
+import org.springframework.security.core.AuthenticationException; // Importar
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -17,11 +23,14 @@ import java.util.Map;
 public class UsuarioController {
 
     private UsuarioService usuarioService;
-
+    private final AuthenticationManager authenticationManager; // Inyectar
+    private final JwtService jwtService; // Inyectar
 
     @Autowired
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService) {
         this.usuarioService = usuarioService;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/registro")
@@ -40,14 +49,36 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginUsuarioDTO loginDto) {
         try {
-            Usuario usuarioLogueado = usuarioService.login(loginDto);
-            return ResponseEntity.ok(usuarioLogueado);
+            // 1. Autenticar credenciales con AuthenticationManager
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+            );
 
-            // NOTA: En un futuro, aquí deberías generar y devolver un JWT (JSON Web Token)
-            // en lugar del objeto Usuario completo.
+            // 2. Obtener el UserDetails (que es el Usuario)
+            Usuario usuarioLogueado = (Usuario) authentication.getPrincipal();
 
+            // 3. Generar el JWT
+            String token = jwtService.generateToken(usuarioLogueado);
+
+            // 4. Obtener el objeto Usuario sin el password (o solo los datos a devolver)
+            Usuario usuarioResponse = usuarioService.getUsuarioByEmail(usuarioLogueado.getEmail());
+
+            // 5. Devolver la respuesta con el token y datos del usuario
+            JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
+                    .token(token)
+                    .id(usuarioResponse.getId())
+                    .nombre(usuarioResponse.getNombre())
+                    .email(usuarioResponse.getEmail())
+                    .rol(usuarioResponse.getRol())
+                    .build();
+
+            return ResponseEntity.ok(jwtResponse);
+
+        } catch (AuthenticationException e) {
+            // Si las credenciales son incorrectas
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email o contraseña incorrecta.");
         } catch (RuntimeException e) {
-            // Si el email no existe o la contraseña es incorrecta
+            // Manejo de errores genéricos (e.g., usuario no encontrado, aunque AuthenticationException debería cubrirlo)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -55,7 +86,6 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarNombreUsuario(@PathVariable Long id, @RequestBody Map<String, String> body) {
         try {
-            // Obtenemos el "nombre" del cuerpo del JSON
             String nuevoNombre = body.get("nombre");
 
             if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {
