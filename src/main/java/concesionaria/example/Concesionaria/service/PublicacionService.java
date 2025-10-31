@@ -31,15 +31,31 @@ public class PublicacionService {
     private final AutoRepository autoRepository;
     private final FichaTecnicaRepository fichaTecnicaRepository;
 
-    public List<PublicacionResponseDTO> getPublicacion(Long idUsuario){
-        List<Publicacion> publicaciones = publicacionRepository.findByVendedorId(idUsuario);
+    public List<PublicacionResponseDTO> getPublicacion(String emailVendedor){
+        Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido"));
+        List<Publicacion> publicaciones = publicacionRepository.findByVendedorId(vendedor.getId());
         return PublicacionMapper.toResponseDTOList(publicaciones);
     }
 
+    public List<PublicacionResponseDTO> getCatalogoTienda(){
+        List<Publicacion> publicaciones = publicacionRepository.findByEstadoAndTipoPublicacion(EstadoPublicacion.ACEPTADA, TipoPublicacion.CONCESIONARIA);
+        return PublicacionMapper.toResponseDTOList(publicaciones);
+    }
+
+    public List<PublicacionResponseDTO> getCatalogoUsados(){
+        List<Publicacion> publicaciones = publicacionRepository.findByEstadoAndTipoPublicacion(EstadoPublicacion.ACEPTADA, TipoPublicacion.USUARIO);
+        return PublicacionMapper.toResponseDTOList(publicaciones);
+    }
+
+    public PublicacionResponseDTO getPublicacionById(Long idPublicacion){
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
+        return PublicacionMapper.toResponseDTO(publicacion);
+    }
+
     @Transactional
-    public PublicacionResponseDTO postPublicacion(PublicacionRequestDTO dto, Long idUsuario){
+    public PublicacionResponseDTO postPublicacion(PublicacionRequestDTO dto, String emailVendedor){
         // 1. Encontrar al usuario vendedor
-        Usuario vendedor = usuarioRepository.findById(idUsuario).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         // 1. Mapear FichaTecnica DTO a Entidad
         FichaTecnicaRequestDTO fichaDTO = dto.getAuto().getFichaTecnica();
@@ -54,7 +70,7 @@ public class PublicacionService {
         // 2. Mapear Auto DTO a Entidad
         AutoRequestDTO autoDTO = dto.getAuto();
         Auto auto = new Auto();
-        auto.setNombre(autoDTO.getNombre());
+        auto.setMarca(autoDTO.getMarca());
         auto.setModelo(autoDTO.getModelo());
         auto.setPrecio(autoDTO.getPrecio());
         auto.setAnio(autoDTO.getAnio());
@@ -70,10 +86,13 @@ public class PublicacionService {
         publicacion.setVendedor(vendedor); // Asignamos el vendedor
 
         // 4. Asignar estados por defecto
-        publicacion.setEstado(EstadoPublicacion.PENDIENTE);
-        publicacion.setTipoPublicacion(
-                vendedor.getRol() == Rol.ADMIN ? TipoPublicacion.CONCESIONARIA : TipoPublicacion.USUARIO
-        );
+        if(vendedor.getRol() == Rol.ADMIN){
+            publicacion.setEstado(EstadoPublicacion.ACEPTADA);
+            publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
+        }else{
+            publicacion.setEstado(EstadoPublicacion.PENDIENTE);
+            publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
+        }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
 
@@ -82,11 +101,12 @@ public class PublicacionService {
     }
 
     @Transactional
-    public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, Long idUsuario){
+    public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, String emailVendedor){
         // 1. Buscar la publicación existente
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
-        if(!publicacionExistente.getVendedor().getId().equals(idUsuario)){
+        Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido."));
+        if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar esta publicacion");
         }
 
@@ -98,7 +118,7 @@ public class PublicacionService {
 
         publicacionExistente.setDescripcion(dto.getDescripcion());
 
-        autoExistente.setNombre(autoDTO.getNombre());
+        autoExistente.setMarca(autoDTO.getMarca());
         autoExistente.setModelo(autoDTO.getModelo());
         autoExistente.setPrecio(autoDTO.getPrecio());
         autoExistente.setAnio(autoDTO.getAnio());
@@ -119,12 +139,15 @@ public class PublicacionService {
     }
 
     @Transactional
-    public void deletePublicacion(Long idPublicacion, Long idUsuario){
+    public void deletePublicacion(Long idPublicacion, String emailVendedor){
         // 1. Buscar la publicación existente
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
+        Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
+
         // 2. *** VERIFICACIÓN DE PROPIEDAD ***
-        if(!publicacionExistente.getVendedor().getId().equals(idUsuario)){
+        if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar esta publicacion.");
         }
 

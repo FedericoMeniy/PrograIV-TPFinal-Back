@@ -9,9 +9,6 @@ import java.lang.ScopedValue;
 import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario,Long> {
-
     Optional<Usuario> findByemail(String email);
-
-    <T> ScopedValue<T> findByEmail(String email);
 }
 

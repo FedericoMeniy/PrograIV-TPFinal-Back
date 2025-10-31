@@ -38,7 +38,7 @@ public class PublicacionMapper {
     private static AutoResponseDTO toAutoResponseDTO(Auto auto) {
         AutoResponseDTO dto = new AutoResponseDTO();
         dto.setId(auto.getId());
-        dto.setNombre(auto.getNombre());
+        dto.setMarca(auto.getMarca());
         dto.setModelo(auto.getModelo());
         dto.setPrecio(auto.getPrecio());
         dto.setAnio(auto.getAnio());
