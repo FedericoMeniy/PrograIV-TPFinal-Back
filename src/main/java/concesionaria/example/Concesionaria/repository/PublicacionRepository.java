@@ -12,4 +12,5 @@ import java.util.List;
 public interface PublicacionRepository extends JpaRepository<Publicacion, Long> {
     List<Publicacion> findByVendedorId(Long idUsuario);
     List<Publicacion> findByEstadoAndTipoPublicacion(EstadoPublicacion estadp, TipoPublicacion tipo);
+    List<Publicacion> findByEstado(EstadoPublicacion estado);
 }

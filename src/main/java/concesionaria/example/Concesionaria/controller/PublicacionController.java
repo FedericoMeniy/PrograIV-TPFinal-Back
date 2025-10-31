@@ -60,4 +60,14 @@ public class PublicacionController {
         Map<String, String> response = Map.of("mensaje", "Publicación eliminada correctamente");
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/admin/pendientes")
+    public List<PublicacionResponseDTO> getPublicacionesPendientes(){
+        return publicacionService.getPublicacionesPendientes();
+    }
+
+    @PatchMapping("/admin/aprobar/{id}")
+    public PublicacionResponseDTO aprobarPublicacion(@PathVariable Long id) {
+        return publicacionService.aprobarPublicacion(id);
+    }
 }
