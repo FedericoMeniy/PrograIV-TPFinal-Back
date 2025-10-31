@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class AutoRequestDTO {
-    private String nombre;
+    private String marca;
     private String modelo;
     private double precio;
     private Integer anio;

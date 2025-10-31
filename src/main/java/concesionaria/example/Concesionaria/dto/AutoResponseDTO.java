@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class AutoResponseDTO {
     private Long id;
-    private String nombre;
+    private String marca;
     private String modelo;
     private double precio;
     private Integer anio;
