@@ -167,4 +167,23 @@ public class PublicacionService {
             fichaTecnicaRepository.delete(ficha);
         }
     }
+
+    public List<PublicacionResponseDTO> getPublicacionesPendientes(){
+        List<Publicacion> publicaciones = publicacionRepository.findByEstado(EstadoPublicacion.PENDIENTE);
+        return PublicacionMapper.toResponseDTOList(publicaciones);
+    }
+
+    @Transactional
+    public PublicacionResponseDTO aprobarPublicacion(Long idPublicacion){
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
+
+        if(publicacion.getEstado() != EstadoPublicacion.PENDIENTE){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La publicación no está pendiente de aprobación");
+        }
+
+        publicacion.setEstado(EstadoPublicacion.ACEPTADA);
+        Publicacion publicacionAprobada = publicacionRepository.save(publicacion);
+
+        return PublicacionMapper.toResponseDTO(publicacionAprobada);
+    }
 }
