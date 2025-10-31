@@ -27,6 +27,7 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     @OneToMany(mappedBy = "usuario")
     private List<Reserva> reservas = new ArrayList<>();
     private Rol rol;
+    private String telefono;
 
     // --- Implementación de UserDetails ---
 
