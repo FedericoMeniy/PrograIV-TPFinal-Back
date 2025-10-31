@@ -20,4 +20,7 @@ public class UsuarioReservaDTO {
         this.email = usuarioReservaDTO.email;
         this.telefono = usuarioReservaDTO.telefono;
     }
+
+    public UsuarioReservaDTO() {
+    }
 }

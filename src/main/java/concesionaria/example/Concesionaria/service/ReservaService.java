@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ReservaService {
@@ -49,5 +51,38 @@ public class ReservaService {
         nuevaReserva.setFecha(LocalDateTime.now());
 
         return reservaRepository.save(nuevaReserva);
+    }
+
+    public List<ReservaDTO> obtenerReservasPorUsuario(Long idUsuario){
+
+        List<Reserva> reservasUsuario = reservaRepository.findByUsuarioId(idUsuario);
+        List<ReservaDTO> reservasUsuarioDTO = new ArrayList<>();
+
+        for(Reserva reserva : reservasUsuario){
+
+            reservasUsuarioDTO.add(entityReservaToReservaDTO(reserva));
+        }
+
+        return reservasUsuarioDTO;
+    }
+
+    public ReservaDTO entityReservaToReservaDTO(Reserva reserva){
+
+        ReservaDTO reservaDTO = new ReservaDTO();
+        UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO();
+        Usuario usuario = reserva.getUsuario();
+
+
+        reservaDTO.setEstadoReserva(reserva.getEstado());
+
+        usuarioReservaDTO.setNombre(usuario.getNombre());
+        usuarioReservaDTO.setEmail(usuario.getEmail());
+        usuarioReservaDTO.setTelefono(usuario.getTelefono());
+
+        reservaDTO.setUsuarioReservaDTO(usuarioReservaDTO);
+        reservaDTO.setFecha(reserva.getFecha());
+        reservaDTO.setIdPublicacion(reserva.getPublicacion().getId());
+
+        return reservaDTO;
     }
 }
