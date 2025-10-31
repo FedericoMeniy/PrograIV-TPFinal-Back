@@ -19,8 +19,8 @@ import java.time.LocalDateTime;
 @Service
 public class ReservaService {
 
-private PublicacionRepository publicacionRepository;
-private ReservaRepository reservaRepository;
+private final PublicacionRepository publicacionRepository;
+private final ReservaRepository reservaRepository;
 
     @Autowired
     public ReservaService(PublicacionRepository publicacionRepository, ReservaRepository reservaRepository) {

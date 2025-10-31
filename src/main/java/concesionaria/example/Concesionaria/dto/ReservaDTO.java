@@ -10,5 +10,4 @@ public class ReservaDTO {
     private UsuarioReservaDTO usuarioReservaDTO;
     private Long idPublicacion;
     private LocalDateTime fecha;
-
 }
