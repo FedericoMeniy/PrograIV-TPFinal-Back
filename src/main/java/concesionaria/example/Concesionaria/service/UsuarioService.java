@@ -1,7 +1,7 @@
 package concesionaria.example.Concesionaria.service;
 
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
+import concesionaria.example.Concesionaria.dto.UsuarioRegistroDto;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.Rol;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
@@ -26,7 +26,7 @@ public class UsuarioService {
     // ----------------------------------------
 
     @Transactional
-    public Usuario registrarUsuario(RegistroUsuarioDto registroUsuarioDto) throws RuntimeException{
+    public Usuario registrarUsuario(UsuarioRegistroDto registroUsuarioDto) throws RuntimeException{
 
         if(usuarioRepository.findByemail(registroUsuarioDto.getEmail()).isPresent()){
             throw new RuntimeException("El email ya esta en uso");

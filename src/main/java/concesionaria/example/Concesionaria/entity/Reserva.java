@@ -19,8 +19,6 @@ public class Reserva {
     @OneToOne
     private Publicacion publicacion;
     private LocalDateTime fecha;
-
-    @OneToOne
-    private Auto idAuto;
+    
     private EstadoReserva estado;
 }

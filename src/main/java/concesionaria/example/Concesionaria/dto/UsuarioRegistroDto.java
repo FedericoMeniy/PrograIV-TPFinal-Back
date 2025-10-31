@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class RegistroUsuarioDto {
+public class UsuarioRegistroDto {
 
     @NotBlank(message = "El nombre no puede estar vacio")
     private String nombre;
@@ -14,4 +14,5 @@ public class RegistroUsuarioDto {
     @NotBlank(message = "El mail no puede estar vacia")
     @Email(message = "El mail no tiene el formato correcto")
     private String email;
+
 }

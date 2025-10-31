@@ -23,4 +23,5 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario")
     private List<Reserva> reservas = new ArrayList<>();
     private Rol rol;
+    private String telefono;
 }

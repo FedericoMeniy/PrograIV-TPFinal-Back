@@ -1,7 +1,7 @@
 package concesionaria.example.Concesionaria.controller;
 
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
+import concesionaria.example.Concesionaria.dto.UsuarioRegistroDto;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -14,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/usuario")
+
 public class UsuarioController {
 
     private UsuarioService usuarioService;
@@ -25,7 +26,7 @@ public class UsuarioController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<?> registrarUsuario(@Valid @RequestBody RegistroUsuarioDto registroUsuarioDto){
+    public ResponseEntity<?> registrarUsuario(@Valid @RequestBody UsuarioRegistroDto registroUsuarioDto){
 
         try{
             Usuario usuarioRegistrado = usuarioService.registrarUsuario(registroUsuarioDto);
