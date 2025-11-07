@@ -38,7 +38,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login").permitAll()
-                        .requestMatchers("/publicacion/admin/**").hasAuthority("ADMIN")
+
+                        // CORRECCIÓN 1: Usamos hasAnyRole() para crear publicaciones. Requiere ROLE_USUARIO.
+                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion").hasAnyRole("USUARIO", "ADMIN")
+
+                        // CORRECCIÓN 2: Usamos hasRole() para rutas de administrador. Requiere ROLE_ADMIN.
+                        .requestMatchers("/publicacion/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
 

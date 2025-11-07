@@ -35,6 +35,7 @@ public class PublicacionService {
     private final UsuarioRepository usuarioRepository;
     private final AutoRepository autoRepository;
     private final FichaTecnicaRepository fichaTecnicaRepository;
+    private final EmailService emailService;
 
     // Inyectado explícitamente (Asegúrate que ImageStorageService esté anotado con @Service)
     @Autowired
@@ -103,32 +104,32 @@ public class PublicacionService {
 
         Auto autoGuardado = autoRepository.save(auto);
 
-        // 5. Mapear Publicacion DTO a Entidad
+        // 3. Mapear Publicacion DTO a Entidad
         Publicacion publicacion = new Publicacion();
         publicacion.setDescripcion(dto.getDescripcion());
         publicacion.setAuto(autoGuardado); // Asignamos el auto ya guardado
         publicacion.setVendedor(vendedor); // Asignamos el vendedor
 
-        // 6. Asignar estados por defecto
+        // 4. Asignar estados por defecto
         if(vendedor.getRol() == Rol.ADMIN){
             publicacion.setEstado(EstadoPublicacion.ACEPTADA);
             publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
+
         }else{
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
+
+            emailService.sendEmail("francolopezdeboca12@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, esperamos puedas vender tu auto pronto!");
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
 
-        // 7. Convertir la Entidad guardada a DTO de respuesta
+        // 5. Convertir la Entidad guardada a DTO de respuesta
         return PublicacionMapper.toResponseDTO(publicacionGuardada);
     }
 
     @Transactional
     public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, String emailVendedor){
-        // (Nota: Este método aún no maneja la actualización de fotos,
-        // pero el resto de tu lógica está preservada)
-
         // 1. Buscar la publicación existente
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
