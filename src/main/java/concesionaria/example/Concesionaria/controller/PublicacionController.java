@@ -2,9 +2,7 @@ package concesionaria.example.Concesionaria.controller;
 
 import concesionaria.example.Concesionaria.dto.PublicacionRequestDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
-import concesionaria.example.Concesionaria.entity.Publicacion;
 import concesionaria.example.Concesionaria.service.PublicacionService;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -69,5 +67,10 @@ public class PublicacionController {
     @PatchMapping("/admin/aprobar/{id}")
     public PublicacionResponseDTO aprobarPublicacion(@PathVariable Long id) {
         return publicacionService.aprobarPublicacion(id);
+    }
+
+    @PatchMapping("/admin/rechazar/{id}")
+    public PublicacionResponseDTO rechazarPublicacion(@PathVariable Long id){
+        return publicacionService.rechazarPublicacion(id);
     }
 }

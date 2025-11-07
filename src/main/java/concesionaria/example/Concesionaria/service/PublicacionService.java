@@ -186,4 +186,17 @@ public class PublicacionService {
 
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
+
+    public PublicacionResponseDTO rechazarPublicacion(Long idPublicacion){
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
+
+        if(publicacion.getEstado() != EstadoPublicacion.PENDIENTE){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La publicacion no esta pendiente para ser rechazada");
+        }
+
+        publicacion.setEstado(EstadoPublicacion.RECHAZADA);
+        Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
+
+        return PublicacionMapper.toResponseDTO(publicacionRechazada);
+    }
 }
