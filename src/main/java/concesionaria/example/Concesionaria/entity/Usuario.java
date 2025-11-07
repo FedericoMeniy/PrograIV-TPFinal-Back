@@ -34,8 +34,8 @@ public class Usuario implements UserDetails { // Implementar UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Se mapea el rol a una autoridad para Spring Security
-        return List.of(new SimpleGrantedAuthority(rol.name()));
+        // CORRECCIÓN: Se añade el prefijo ROLE_ al nombre del rol.
+        return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));
     }
 
     @Override

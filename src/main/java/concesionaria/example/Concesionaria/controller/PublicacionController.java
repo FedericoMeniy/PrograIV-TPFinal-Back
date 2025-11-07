@@ -1,5 +1,6 @@
 package concesionaria.example.Concesionaria.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import concesionaria.example.Concesionaria.dto.PublicacionRequestDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.service.PublicacionService;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,8 @@ import java.util.Map;
 public class PublicacionController {
     @Autowired
     private PublicacionService publicacionService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @GetMapping("/misPublicaciones")
     public List<PublicacionResponseDTO> getMisPublicaciones(Authentication authentication){
@@ -39,9 +43,21 @@ public class PublicacionController {
     }
 
     @PostMapping("/crearPublicacion")
-    public PublicacionResponseDTO postPublicacion(@RequestBody PublicacionRequestDTO publicacionDTO, Authentication authentication){
+    public PublicacionResponseDTO postPublicacion(
+            @RequestParam("publicacion") String publicacionDtoString, // El DTO como String
+            @RequestParam(value = "files", required = false) List<MultipartFile> files, // Los archivos
+            Authentication authentication) {
+
         String emailVendedor = authentication.getName();
-        return publicacionService.postPublicacion(publicacionDTO, emailVendedor);
+
+        PublicacionRequestDTO publicacionDTO;
+        try {
+            publicacionDTO = objectMapper.readValue(publicacionDtoString, PublicacionRequestDTO.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al parsear los datos de la publicación", e);
+        }
+
+        return publicacionService.postPublicacion(publicacionDTO, files, emailVendedor);
     }
 
     @PutMapping("/{id}")

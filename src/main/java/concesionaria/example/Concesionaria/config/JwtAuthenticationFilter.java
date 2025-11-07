@@ -18,7 +18,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -35,6 +34,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+        // ** INICIO DE CORRECCIÓN PARA CORS/OPTIONS **
+        // Permitir que las solicitudes OPTIONS (preflight de CORS) pasen
+        // sin ser procesadas por el filtro JWT. Spring Security y la config de CORS
+        // se encargarán de ellas.
+        if (request.getMethod().equals("OPTIONS")) {
+            // Es buena práctica devolver 200 OK inmediatamente
+            response.setStatus(HttpServletResponse.SC_OK);
+            filterChain.doFilter(request, response);
+            return;
+        }
+        // ** FIN DE CORRECCIÓN **
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;

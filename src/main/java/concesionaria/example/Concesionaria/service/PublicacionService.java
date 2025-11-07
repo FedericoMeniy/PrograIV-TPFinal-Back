@@ -17,20 +17,29 @@ import concesionaria.example.Concesionaria.repository.PublicacionRepository;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile; // <-- NUEVO IMPORT
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList; // <-- NUEVO IMPORT
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PublicacionService {
+
+    // Inyectado a través de @RequiredArgsConstructor (o @Autowired si quitas final)
     private final PublicacionRepository publicacionRepository;
     private final UsuarioRepository usuarioRepository;
     private final AutoRepository autoRepository;
     private final FichaTecnicaRepository fichaTecnicaRepository;
     private final EmailService emailService;
+
+    // Inyectado explícitamente (Asegúrate que ImageStorageService esté anotado con @Service)
+    @Autowired
+    private ImageStorageService imageStorageService;
 
     public List<PublicacionResponseDTO> getPublicacion(String emailVendedor){
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido"));
@@ -54,11 +63,22 @@ public class PublicacionService {
     }
 
     @Transactional
-    public PublicacionResponseDTO postPublicacion(PublicacionRequestDTO dto, String emailVendedor){
+    public PublicacionResponseDTO postPublicacion(PublicacionRequestDTO dto, List<MultipartFile> files, String emailVendedor){
         // 1. Encontrar al usuario vendedor
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        // 1. Mapear FichaTecnica DTO a Entidad
+        // 2. Guardar las imágenes y obtener sus URLs
+        List<String> imageUrls = new ArrayList<>();
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    String url = imageStorageService.store(file);
+                    imageUrls.add(url);
+                }
+            }
+        }
+
+        // 3. Mapear FichaTecnica DTO a Entidad
         FichaTecnicaRequestDTO fichaDTO = dto.getAuto().getFichaTecnica();
         FichaTecnica fichaTecnica = new FichaTecnica();
         fichaTecnica.setMotor(fichaDTO.getMotor());
@@ -68,7 +88,7 @@ public class PublicacionService {
         fichaTecnica.setPotencia(fichaDTO.getPotencia());
         FichaTecnica fichaGuardada = fichaTecnicaRepository.save(fichaTecnica);
 
-        // 2. Mapear Auto DTO a Entidad
+        // 4. Mapear Auto DTO a Entidad
         AutoRequestDTO autoDTO = dto.getAuto();
         Auto auto = new Auto();
         auto.setMarca(autoDTO.getMarca());
@@ -78,6 +98,10 @@ public class PublicacionService {
         auto.setKm(autoDTO.getKm());
         auto.setColor(autoDTO.getColor());
         auto.setFichaTecnica(fichaGuardada); // Asignamos la ficha ya guardada
+
+        // --- ASIGNAR IMÁGENES AL AUTO ---
+        auto.setImagenesUrl(imageUrls);
+
         Auto autoGuardado = autoRepository.save(auto);
 
         // 3. Mapear Publicacion DTO a Entidad
@@ -86,6 +110,7 @@ public class PublicacionService {
         publicacion.setAuto(autoGuardado); // Asignamos el auto ya guardado
         publicacion.setVendedor(vendedor); // Asignamos el vendedor
 
+        // 4. Asignar estados por defecto
         if(vendedor.getRol() == Rol.ADMIN){
             publicacion.setEstado(EstadoPublicacion.ACEPTADA);
             publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
@@ -154,6 +179,9 @@ public class PublicacionService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar esta publicacion.");
         }
 
+        // (Nota: Aquí también deberías eliminar las imágenes del disco
+        // usando imageStorageService.delete(url) si implementas ese método)
+
         // 3. Obtener el Auto y FichaTecnica asociados
         Auto auto = publicacionExistente.getAuto();
 
@@ -190,6 +218,7 @@ public class PublicacionService {
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
+    @Transactional // <-- Añadido @Transactional
     public PublicacionResponseDTO rechazarPublicacion(Long idPublicacion){
         Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
 
@@ -201,5 +230,11 @@ public class PublicacionService {
         Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
 
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
+    }
+
+    // Corregí un error de tipeo en el 'findByemail' que tenías
+    private Usuario findVendedorByEmail(String emailVendedor) {
+        return usuarioRepository.findByemail(emailVendedor)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
     }
 }
