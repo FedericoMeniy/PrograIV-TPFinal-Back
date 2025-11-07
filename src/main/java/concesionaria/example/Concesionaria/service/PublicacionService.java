@@ -30,6 +30,7 @@ public class PublicacionService {
     private final UsuarioRepository usuarioRepository;
     private final AutoRepository autoRepository;
     private final FichaTecnicaRepository fichaTecnicaRepository;
+    private final EmailService emailService;
 
     public List<PublicacionResponseDTO> getPublicacion(String emailVendedor){
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido"));
@@ -85,13 +86,15 @@ public class PublicacionService {
         publicacion.setAuto(autoGuardado); // Asignamos el auto ya guardado
         publicacion.setVendedor(vendedor); // Asignamos el vendedor
 
-        // 4. Asignar estados por defecto
         if(vendedor.getRol() == Rol.ADMIN){
             publicacion.setEstado(EstadoPublicacion.ACEPTADA);
             publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
+
         }else{
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
+
+            emailService.sendEmail(vendedor.getEmail(),"Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, esperamos puedas vender tu auto pronto!");
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
