@@ -2,6 +2,8 @@ package concesionaria.example.Concesionaria.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class AutoResponseDTO {
     private Long id;
@@ -12,4 +14,5 @@ public class AutoResponseDTO {
     private String km;
     private String color;
     private FichaTecnicaResponseDTO fichaTecnica;
+    private List<String> imagenesUrl;
 }

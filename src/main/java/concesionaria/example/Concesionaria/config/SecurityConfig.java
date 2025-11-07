@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/tienda").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login").permitAll()
                         .requestMatchers("/publicacion/admin/**").hasAuthority("ADMIN")
 

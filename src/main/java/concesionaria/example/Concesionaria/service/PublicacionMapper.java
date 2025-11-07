@@ -45,6 +45,7 @@ public class PublicacionMapper {
         dto.setKm(auto.getKm());
         dto.setColor(auto.getColor());
         dto.setFichaTecnica(toFichaTecnicaResponseDTO(auto.getFichaTecnica()));
+        dto.setImagenesUrl(auto.getImagenesUrl());
         return dto;
     }
 
