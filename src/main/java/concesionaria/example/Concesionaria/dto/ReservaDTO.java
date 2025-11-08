@@ -15,7 +15,8 @@ public class ReservaDTO {
     private Long idPublicacion;
     @NotBlank
     private LocalDateTime fecha;
+
+    //Posiblemente este de abajo no se use
     @NotBlank
     private EstadoReserva estadoReserva;
-
 }
