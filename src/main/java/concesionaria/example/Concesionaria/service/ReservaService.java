@@ -1,5 +1,6 @@
 package concesionaria.example.Concesionaria.service;
 
+import com.mercadopago.resources.payment.Payment;
 import concesionaria.example.Concesionaria.dto.ReservaDTO;
 import concesionaria.example.Concesionaria.dto.UsuarioReservaDTO;
 import concesionaria.example.Concesionaria.entity.Publicacion;
@@ -10,6 +11,7 @@ import concesionaria.example.Concesionaria.repository.PublicacionRepository;
 import concesionaria.example.Concesionaria.repository.ReservaRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,20 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Data
 public class ReservaService {
 
     private PublicacionRepository publicacionRepository;
     private ReservaRepository reservaRepository;
+    private MercadoPagoService mercadoPagoService;
 
-    @Autowired
-    public ReservaService(PublicacionRepository publicacionRepository, ReservaRepository reservaRepository) {
-        this.publicacionRepository = publicacionRepository;
-        this.reservaRepository = reservaRepository;
-    }
+
 
 
     @Transactional
-    public Reserva cargarReserva(ReservaDTO reservaDTO){
+    public String iniciarReserva(ReservaDTO reservaDTO){
 
         Reserva nuevaReserva = new Reserva();
         Usuario usuario = new Usuario();
@@ -49,8 +49,13 @@ public class ReservaService {
         nuevaReserva.setPublicacion(publicacion);
         nuevaReserva.setEstado(EstadoReserva.PENDIENTE);
         nuevaReserva.setFecha(LocalDateTime.now());
+        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio()*0.90);
 
-        return reservaRepository.save(nuevaReserva);
+        Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
+
+        String pagoURL = mercadoPagoService.crearPreferenciaDePago(reservaPreGuardada.getPublicacion(),reservaPreGuardada.getId(),reservaPreGuardada.getMontoReserva());
+
+        return pagoURL;
     }
 
     public List<ReservaDTO> obtenerReservasPorUsuario(Long idUsuario){
@@ -85,4 +90,44 @@ public class ReservaService {
 
         return reservaDTO;
     }
+
+    @Transactional
+    public void procesarNotificacionDePago(Long reservaId, String paymentId) {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElse(null);
+
+        if (reserva == null) {
+            System.err.println("Webhook - Reserva ID " + reservaId + " no encontrada. ID de Pago: " + paymentId);
+            return;
+        }
+
+        try {
+            // 1. Obtener los detalles del pago desde la API de Mercado Pago
+            Payment payment = mercadoPagoService.obtenerDetallesDePago(paymentId);
+            String estadoMP = payment.getStatus().toString();
+
+            System.out.println("Pago ID: " + paymentId + " - Estado de MP: " + estadoMP);
+
+            // 2. Actualizar el estado de la Reserva en la base de datos
+            if ("approved".equalsIgnoreCase(estadoMP)) {
+                reserva.setEstado(EstadoReserva.ACEPTADA);
+                // Si la reserva se aceptó, la publicación debería marcarse como RESERVADA
+                // publicacionService.marcarComoReservada(reserva.getPublicacion().getId());
+                // Nota: necesitarías inyectar el PublicacionService para esto
+
+            } else if ("rejected".equalsIgnoreCase(estadoMP) || "cancelled".equalsIgnoreCase(estadoMP)) {
+                reserva.setEstado(EstadoReserva.CANCELADA);
+
+            } else if ("pending".equalsIgnoreCase(estadoMP)) {
+                reserva.setEstado(EstadoReserva.PENDIENTE);
+            }
+
+
+            reservaRepository.save(reserva);
+
+        } catch (Exception e) {
+            System.err.println("Error al procesar la notificación de pago para Reserva ID " + reservaId + ": " + e.getMessage());
+        }
+    }
+
 }

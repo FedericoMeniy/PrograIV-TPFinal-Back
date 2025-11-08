@@ -23,4 +23,5 @@ public class Reserva {
     @OneToOne
     private Auto idAuto;
     private EstadoReserva estado;
+    private double montoReserva;
 }

@@ -29,12 +29,12 @@ public class ReservaController {
     }
 
     @PostMapping("/crear")
-    public ResponseEntity<?> cargarReserva(@Valid@RequestBody ReservaDTO reservaDTO){
+    public ResponseEntity<?> iniciarReserva(@Valid@RequestBody ReservaDTO reservaDTO){
 
         try{
 
-            Reserva reservaCargada = reservaService.cargarReserva(reservaDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(reservaDTO);
+            String redireccionURL = reservaService.iniciarReserva(reservaDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(redireccionURL);
 
         }catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());

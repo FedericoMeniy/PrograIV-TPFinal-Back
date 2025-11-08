@@ -37,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publicacion/tienda").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login", "/notificacion/**").permitAll()
 
                         // CORRECCIÓN 1: Usamos hasAnyRole() para crear publicaciones. Requiere ROLE_USUARIO.
                         .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion").hasAnyRole("USUARIO", "ADMIN")
