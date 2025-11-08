@@ -111,9 +111,7 @@ public class ReservaService {
             // 2. Actualizar el estado de la Reserva en la base de datos
             if ("approved".equalsIgnoreCase(estadoMP)) {
                 reserva.setEstado(EstadoReserva.ACEPTADA);
-                // Si la reserva se aceptó, la publicación debería marcarse como RESERVADA
-                // publicacionService.marcarComoReservada(reserva.getPublicacion().getId());
-                // Nota: necesitarías inyectar el PublicacionService para esto
+                reserva.setPaymentId(paymentId);
 
             } else if ("rejected".equalsIgnoreCase(estadoMP) || "cancelled".equalsIgnoreCase(estadoMP)) {
                 reserva.setEstado(EstadoReserva.CANCELADA);

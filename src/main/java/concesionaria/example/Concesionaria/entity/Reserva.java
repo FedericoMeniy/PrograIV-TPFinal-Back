@@ -24,4 +24,5 @@ public class Reserva {
     private Auto idAuto;
     private EstadoReserva estado;
     private double montoReserva;
+    private String paymentId;
 }
