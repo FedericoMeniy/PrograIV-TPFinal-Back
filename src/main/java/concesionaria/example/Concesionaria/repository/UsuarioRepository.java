@@ -1,6 +1,5 @@
 package concesionaria.example.Concesionaria.repository;
 
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

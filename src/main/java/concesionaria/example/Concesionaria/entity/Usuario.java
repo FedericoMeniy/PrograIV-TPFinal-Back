@@ -30,7 +30,6 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     private String telefono;
 
 
-// --- Implementación de UserDetails ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

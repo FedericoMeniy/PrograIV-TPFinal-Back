@@ -10,6 +10,7 @@ public class PublicacionResponseDTO {
     private String descripcion;
     private EstadoPublicacion estado;
     private TipoPublicacion tipoPublicacion;
-    private String nombreVendedor; // <-- ¡MUY IMPORTANTE! Solo el nombre, no el objeto Usuario
-    private AutoResponseDTO auto; // DTO anidado
+    private String nombreVendedor;
+    private String vendedorTelefono;
+    private AutoResponseDTO auto;
 }
