@@ -12,6 +12,7 @@ import concesionaria.example.Concesionaria.repository.ReservaRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,17 +20,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Data
+@RequiredArgsConstructor
 public class ReservaService {
-
-    private PublicacionRepository publicacionRepository;
-    private ReservaRepository reservaRepository;
-    private MercadoPagoService mercadoPagoService;
-
-
-
+    private final PublicacionRepository publicacionRepository;
+    private final ReservaRepository reservaRepository;
+    private final MercadoPagoService mercadoPagoService;
 
     @Transactional
     public String iniciarReserva(ReservaDTO reservaDTO){
@@ -37,7 +36,6 @@ public class ReservaService {
         Reserva nuevaReserva = new Reserva();
         Usuario usuario = new Usuario();
         UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO(reservaDTO.getUsuarioReservaDTO());
-
 
         Publicacion publicacion = publicacionRepository.findById(reservaDTO.getIdPublicacion()).orElseThrow(()-> new RuntimeException("La publicacion no existe"));
 
@@ -76,7 +74,6 @@ public class ReservaService {
         ReservaDTO reservaDTO = new ReservaDTO();
         UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO();
         Usuario usuario = reserva.getUsuario();
-
 
         reservaDTO.setEstadoReserva(reserva.getEstado());
 
@@ -120,7 +117,6 @@ public class ReservaService {
                 reserva.setEstado(EstadoReserva.PENDIENTE);
             }
 
-
             reservaRepository.save(reserva);
 
         } catch (Exception e) {
@@ -128,4 +124,11 @@ public class ReservaService {
         }
     }
 
+    public List<ReservaDTO> getReservas(){
+        List<Reserva> reservas = reservaRepository.findAll();
+
+        return reservas.stream()
+                .map(this::entityReservaToReservaDTO)
+                .collect(Collectors.toList());
+    }
 }

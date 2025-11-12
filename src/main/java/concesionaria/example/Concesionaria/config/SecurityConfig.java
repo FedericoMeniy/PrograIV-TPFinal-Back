@@ -44,6 +44,7 @@ public class SecurityConfig {
 
                         // CORRECCIÓN 2: Usamos hasRole() para rutas de administrador. Requiere ROLE_ADMIN.
                         .requestMatchers("/publicacion/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/reserva/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
 
