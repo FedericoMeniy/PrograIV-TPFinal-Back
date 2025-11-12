@@ -54,27 +54,6 @@ public class UsuarioService implements UserDetailsService {
         return usuario;
     }
 
-    // Este método se simplifica/adapta. La verificación de credenciales ocurre en el Controller con AuthenticationManager.
-    public Usuario login(LoginUsuarioDTO loginDto) {
-        // En el nuevo flujo, este método se usa para devolver los datos públicos del usuario post-autenticación
-        return getUsuarioByEmail(loginDto.getEmail());
-    }
-
-    // Método de utilidad para obtener el objeto Usuario sin la contraseña
-    public Usuario getUsuarioByEmail(String email) {
-        Usuario usuario = usuarioRepository.findByemail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
-
-        // Devolver una copia o un objeto sin la contraseña para la respuesta al cliente
-        Usuario responseUsuario = new Usuario();
-        responseUsuario.setId(usuario.getId());
-        responseUsuario.setNombre(usuario.getNombre());
-        responseUsuario.setEmail(usuario.getEmail());
-        responseUsuario.setRol(usuario.getRol());
-
-        return responseUsuario;
-    }
-
     public Usuario actualizarNombre(Long id, String nuevoNombre) {
         // 1. Buscar al usuario por ID
         Usuario usuario = usuarioRepository.findById(id)
