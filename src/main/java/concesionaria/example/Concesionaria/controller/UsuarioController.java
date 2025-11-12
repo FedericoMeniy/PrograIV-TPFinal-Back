@@ -1,9 +1,11 @@
 package concesionaria.example.Concesionaria.controller;
 
+ // Importar
+import concesionaria.example.Concesionaria.dto.JwtResponseDTO;
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
-import concesionaria.example.Concesionaria.dto.JwtResponseDTO; // Importar
+import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
 import concesionaria.example.Concesionaria.entity.Usuario;
+import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import concesionaria.example.Concesionaria.service.JwtService; // Importar
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -24,17 +26,19 @@ public class UsuarioController {
 
     private UsuarioService usuarioService;
     private final AuthenticationManager authenticationManager; // Inyectar
-    private final JwtService jwtService; // Inyectar
+    private final JwtService jwtService;
+    private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService) {
+    @Autowired // Spring usará este constructor para inyectar todas las dependencias
+    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService, UsuarioRepository usuarioRepository) {
         this.usuarioService = usuarioService;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<?> registrarUsuario(@Valid @RequestBody RegistroUsuarioDto registroUsuarioDto){
+    public ResponseEntity<?> registrarUsuario(@Valid @RequestBody RegistroUsuarioDTO registroUsuarioDto){
 
         try{
             Usuario usuarioRegistrado = usuarioService.registrarUsuario(registroUsuarioDto);
@@ -61,7 +65,7 @@ public class UsuarioController {
             String token = jwtService.generateToken(usuarioLogueado);
 
             // 4. Obtener el objeto Usuario sin el password (o solo los datos a devolver)
-            Usuario usuarioResponse = usuarioService.getUsuarioByEmail(usuarioLogueado.getEmail());
+            Usuario usuarioResponse = usuarioRepository.findByemail(usuarioLogueado.getEmail()).orElseThrow(() -> new RuntimeException("Usuario no encontrado."));;;
 
             // 5. Devolver la respuesta con el token y datos del usuario
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()

@@ -22,19 +22,23 @@ public class PublicacionMapper {
         dto.setDescripcion(publicacion.getDescripcion());
         dto.setEstado(publicacion.getEstado());
         dto.setTipoPublicacion(publicacion.getTipoPublicacion());
-        dto.setNombreVendedor(publicacion.getVendedor().getNombre()); // <-- Mapeo seguro
-        dto.setAuto(toAutoResponseDTO(publicacion.getAuto())); // Mapeo anidado
+
+        // Mapeo del nombre del vendedor (ya existía)
+        dto.setNombreVendedor(publicacion.getVendedor().getNombre());
+
+        // ⭐️ LÍNEA CLAVE AÑADIDA: Mapeo del teléfono del vendedor
+        dto.setVendedorTelefono(publicacion.getVendedor().getTelefono());
+
+        dto.setAuto(toAutoResponseDTO(publicacion.getAuto()));
         return dto;
     }
 
-    // Convierte UNA LISTA de Entidades a UNA LISTA de DTOs
     public static List<PublicacionResponseDTO> toResponseDTOList(List<Publicacion> publicaciones) {
         return publicaciones.stream()
                 .map(PublicacionMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    // Métodos privados de ayuda para los objetos anidados
     private static AutoResponseDTO toAutoResponseDTO(Auto auto) {
         AutoResponseDTO dto = new AutoResponseDTO();
         dto.setId(auto.getId());

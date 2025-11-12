@@ -1,7 +1,7 @@
 package concesionaria.example.Concesionaria.service;
 
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDto;
+import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.Rol;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
@@ -27,7 +27,7 @@ public class UsuarioService implements UserDetailsService {
     }
 
     @Transactional
-    public Usuario registrarUsuario(RegistroUsuarioDto registroUsuarioDto) throws RuntimeException{
+    public Usuario registrarUsuario(RegistroUsuarioDTO registroUsuarioDto) throws RuntimeException{
 
         if(usuarioRepository.findByemail(registroUsuarioDto.getEmail()).isPresent()){
             throw new RuntimeException("El email ya esta en uso");
@@ -35,9 +35,8 @@ public class UsuarioService implements UserDetailsService {
         Usuario nuevoUsuario = new Usuario();
         nuevoUsuario.setEmail(registroUsuarioDto.getEmail());
         nuevoUsuario.setNombre(registroUsuarioDto.getNombre());
-
-        // La contraseña se codifica antes de guardar
         nuevoUsuario.setPassword(passwordEncoder.encode(registroUsuarioDto.getPassword()));
+        nuevoUsuario.setTelefono(registroUsuarioDto.getTelefono());
 
         nuevoUsuario.setRol(Rol.USUARIO);
 
@@ -47,7 +46,6 @@ public class UsuarioService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        // CORRECCIÓN CLAVE: Usamos findByemail (minúscula) y eliminamos el cast redundante
         Usuario usuario = usuarioRepository.findByemail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
