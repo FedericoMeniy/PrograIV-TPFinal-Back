@@ -1,13 +1,12 @@
 package concesionaria.example.Concesionaria.dto;
 
-import concesionaria.example.Concesionaria.enums.EstadoReserva;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-public class ReservaDTO {
+public class ReservaRequestDTO {
 
     @NotBlank
     private UsuarioReservaDTO usuarioReservaDTO;
@@ -15,8 +14,4 @@ public class ReservaDTO {
     private Long idPublicacion;
     @NotBlank
     private LocalDateTime fecha;
-
-    //Posiblemente este de abajo no se use
-    @NotBlank
-    private EstadoReserva estadoReserva;
 }
