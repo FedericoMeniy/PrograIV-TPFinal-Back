@@ -114,7 +114,10 @@ public class PublicacionService {
         }else{
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
-            emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estara pendiente de aceptacion");
+            /*
+            emailService.sendEmail("federicomeniy@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estara pendiente de aceptacion");
+
+             */
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
@@ -159,8 +162,8 @@ public class PublicacionService {
                             ", Vendedor actual: " + (vendedor.getEmail() != null ? vendedor.getEmail() : "null"));
         }
 
-        // 3. Si la publicación estaba ACEPTADA, cambiar a PENDIENTE para nueva revisión
-        if(publicacionExistente.getEstado() == EstadoPublicacion.ACEPTADA){
+        // 3. Si la publicación estaba ACEPTADA, cambiar a PENDIENTE para nueva revisión solo si es USUARIO.
+        if(vendedor.getRol() == Rol.USUARIO && (publicacionExistente.getEstado() == EstadoPublicacion.ACEPTADA || publicacionExistente.getEstado() == EstadoPublicacion.RECHAZADA)){
             publicacionExistente.setEstado(EstadoPublicacion.PENDIENTE);
         }
 
@@ -194,6 +197,8 @@ public class PublicacionService {
             if(autoDTO.getColor() != null && !autoDTO.getColor().trim().isEmpty()){
                 autoExistente.setColor(autoDTO.getColor().trim());
             }
+
+            autoExistente.setPrecio(autoDTO.getPrecio());
 
             // Actualizar ficha técnica solo si viene en el DTO
             if(autoDTO.getFichaTecnica() != null){
@@ -266,9 +271,9 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.ACEPTADA);
         Publicacion publicacionAprobada = publicacionRepository.save(publicacion);
-
+/*
         emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion Aprobada","Tu publicacion en 'MyCar' ha sido aprobada, esperemos puedas vender tu auto pronto!");
-
+*/
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
@@ -283,9 +288,9 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.RECHAZADA);
         Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
-
+/*
         emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion rechazada","Tu publicacion en 'MyCar' ha sido rechazada, por favor revisa todo correctamente antes de enviar, no se aceptaran cosas fuera de lugar");
-
+*/
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
     }
 
