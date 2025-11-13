@@ -24,7 +24,7 @@ public class MercadoPagoService {
     private String frontendURL;
     @Value("${backend.base-url}")
     private String backendURL;
-    @Value("${mercadopago.access-token}")
+    @Value("${mercadopago.access-token.private}")
     private String accessToken;
 
     public String crearPreferenciaDePago(Publicacion publicacion, Long reservaId, double monto){

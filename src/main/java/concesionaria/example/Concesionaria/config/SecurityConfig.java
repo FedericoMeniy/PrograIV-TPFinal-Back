@@ -32,7 +32,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(HttpMethod.OPTIONS).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS).permitAll() // Permite preflight
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/tienda").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
@@ -55,11 +55,10 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
 
         // Permite los métodos HTTP que usas
-        //FEDE ACA AGREGUE PATCH PARA CAMBIAR EL ESTADO DE LAS PUBLICACIONES A PENDIENTES (EL ADMIN)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-        // Permite todas las cabeceras (incluyendo 'Authorization' y 'Content-Type')
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Permite todas las cabeceras solicitadas por el cliente, incluyendo 'Authorization'
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin"));
 
         // Permite que el navegador envíe credenciales (como cookies o tokens)
         configuration.setAllowCredentials(true);
