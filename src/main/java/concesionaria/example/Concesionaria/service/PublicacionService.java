@@ -208,6 +208,8 @@ public class PublicacionService {
         publicacion.setEstado(EstadoPublicacion.ACEPTADA);
         Publicacion publicacionAprobada = publicacionRepository.save(publicacion);
 
+        emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion Aprobada","Tu publicacion en 'MyCar' ha sido aprobada, esperemos puedas vender tu auto pronto!");
+
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
@@ -221,6 +223,9 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.RECHAZADA);
         Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
+
+        emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion rechazada","Tu publicacion en 'MyCar' ha sido rechazada, por favor revisa todo correctamente antes de enviar, no se aceptaran cosas fuera de lugar");
+
 
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
     }

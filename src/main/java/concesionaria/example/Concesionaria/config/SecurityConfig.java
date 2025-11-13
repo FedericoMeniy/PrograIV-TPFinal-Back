@@ -38,8 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login", "/notificacion/**").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion").hasAnyAuthority("ROLE_USUARIO", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion", "/reserva/crear").hasAnyAuthority("ROLE_USUARIO", "ROLE_ADMIN")
                         .requestMatchers("/publicacion/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/reserva/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()

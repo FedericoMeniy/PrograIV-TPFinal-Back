@@ -45,7 +45,7 @@ public class ReservaService {
         nuevaReserva.setPublicacion(publicacion);
         nuevaReserva.setEstado(EstadoReserva.PENDIENTE);
         nuevaReserva.setFecha(LocalDateTime.now());
-        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio()*0.90);
+        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio()*0.10);
 
         Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
 
