@@ -1,6 +1,7 @@
 package concesionaria.example.Concesionaria.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import concesionaria.example.Concesionaria.dto.PublicacionEstadisticasDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionRequestDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.service.PublicacionService;
@@ -105,5 +106,10 @@ public class PublicacionController {
 
         Map<String, String> response = Map.of("mensaje", "Publicación marcada como vendida y eliminada correctamente.");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/admin/estadisticas")
+    public PublicacionEstadisticasDTO getPublicacionEstadisticas() {
+        return publicacionService.getEstadisticasPublicaciones();
     }
 }
