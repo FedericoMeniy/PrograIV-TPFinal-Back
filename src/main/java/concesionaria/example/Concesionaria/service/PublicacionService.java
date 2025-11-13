@@ -1,9 +1,6 @@
 package concesionaria.example.Concesionaria.service;
 
-import concesionaria.example.Concesionaria.dto.AutoRequestDTO;
-import concesionaria.example.Concesionaria.dto.FichaTecnicaRequestDTO;
-import concesionaria.example.Concesionaria.dto.PublicacionRequestDTO;
-import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
+import concesionaria.example.Concesionaria.dto.*;
 import concesionaria.example.Concesionaria.entity.Auto;
 import concesionaria.example.Concesionaria.entity.FichaTecnica;
 import concesionaria.example.Concesionaria.entity.Publicacion;
@@ -119,7 +116,7 @@ public class PublicacionService {
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
 
-            //emailService.sendEmail("nahuelacuna426@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, esperamos puedas vender tu auto pronto!");
+            emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estara pendiente de aceptacion");
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
@@ -168,27 +165,23 @@ public class PublicacionService {
 
     @Transactional
     public void deletePublicacion(Long idPublicacion, String emailVendedor){
-        // 1. Buscar la publicación existente
+
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
 
-        // 2. *** VERIFICACIÓN DE PROPIEDAD ***
+
         if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar esta publicacion.");
         }
 
-        // (Nota: Aquí también deberías eliminar las imágenes del disco
-        // usando imageStorageService.delete(url) si implementas ese método)
-
-        // 3. Obtener el Auto y FichaTecnica asociados
         Auto auto = publicacionExistente.getAuto();
 
-        // (Manejo defensivo por si la FichaTecnica es nula en la BD)
+
         FichaTecnica ficha = (auto != null) ? auto.getFichaTecnica() : null;
 
-        // 4. Eliminar en orden
+
         publicacionRepository.delete(publicacionExistente);
 
         if(auto != null){
@@ -218,7 +211,7 @@ public class PublicacionService {
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
-    @Transactional // <-- Añadido @Transactional
+    @Transactional
     public PublicacionResponseDTO rechazarPublicacion(Long idPublicacion){
         Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
 
@@ -242,5 +235,23 @@ public class PublicacionService {
     public void marcarComoVendidaYEliminar(Long idPublicacion, String emailVendedor){
 
         deletePublicacion(idPublicacion, emailVendedor);
+    }
+
+    public PublicacionEstadisticasDTO getEstadisticasPublicaciones() {
+        long total = publicacionRepository.count();
+        long pendientes = publicacionRepository.countByEstado(EstadoPublicacion.PENDIENTE);
+        long aceptadas = publicacionRepository.countByEstado(EstadoPublicacion.ACEPTADA);
+        long rechazadas = publicacionRepository.countByEstado(EstadoPublicacion.RECHAZADA);
+        long porUsuario = publicacionRepository.countByTipoPublicacion(TipoPublicacion.USUARIO);
+        long porConcesionaria = publicacionRepository.countByTipoPublicacion(TipoPublicacion.CONCESIONARIA);
+
+        return PublicacionEstadisticasDTO.builder()
+                .totalPublicaciones(total)
+                .pendientes(pendientes)
+                .aceptadas(aceptadas)
+                .rechazadas(rechazadas)
+                .usuario(porUsuario)
+                .concesionaria(porConcesionaria)
+                .build();
     }
 }
