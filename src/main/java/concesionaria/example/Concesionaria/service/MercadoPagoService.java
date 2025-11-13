@@ -31,7 +31,6 @@ public class MercadoPagoService {
 
         try{
             MercadoPagoConfig.setAccessToken(accessToken);
-            //1) Definimos el item que va a pagar el usuario (la reserva)
             PreferenceItemRequest preferenceItemRequest = PreferenceItemRequest.builder()
                     .title("Reserva del auto: " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo())
                     .quantity(1)
