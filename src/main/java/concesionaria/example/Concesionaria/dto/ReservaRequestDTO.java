@@ -1,6 +1,7 @@
 package concesionaria.example.Concesionaria.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -8,10 +9,10 @@ import java.time.LocalDateTime;
 @Data
 public class ReservaRequestDTO {
 
-    @NotBlank
+    @NotNull
     private UsuarioReservaDTO usuarioReservaDTO;
-    @NotBlank
+    @NotNull
     private Long idPublicacion;
-    @NotBlank
+    @NotNull
     private LocalDateTime fecha;
 }
