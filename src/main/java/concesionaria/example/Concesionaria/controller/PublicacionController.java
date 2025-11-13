@@ -75,18 +75,25 @@ public class PublicacionController {
         return ResponseEntity.ok(response);
     }
 
+    // Lo que dice corregido lo cambie yo para poder hacer las funcionalidades del admin en el front
+    //Fede 12/11 21:04
+    // [CORREGIDO] Ruta /admin/pendientes para que coincida con SecurityConfig
     @GetMapping("/admin/pendientes")
     public List<PublicacionResponseDTO> getPublicacionesPendientes(){
         return publicacionService.getPublicacionesPendientes();
     }
 
+    // [CORREGIDO] Ruta /admin/aprobar/{id} para que coincida con SecurityConfig
     @PatchMapping("/admin/aprobar/{id}")
     public PublicacionResponseDTO aprobarPublicacion(@PathVariable Long id) {
         return publicacionService.aprobarPublicacion(id);
     }
 
-    @PatchMapping("/admin/rechazar/{id}")
-    public PublicacionResponseDTO rechazarPublicacion(@PathVariable Long id){
-        return publicacionService.rechazarPublicacion(id);
+    // [CORREGIDO] Ruta /admin/rechazar/{id} para que coincida con SecurityConfig
+    @DeleteMapping("/admin/rechazar/{id}") // Cambiado de PatchMapping a DeleteMapping para coincidir con la acción de "eliminar/rechazar"
+    public ResponseEntity<?> rechazarPublicacion(@PathVariable Long id){
+        publicacionService.rechazarPublicacion(id);
+        Map<String, String> response = Map.of("mensaje", "Publicación rechazada y eliminada correctamente");
+        return ResponseEntity.ok(response);
     }
 }
