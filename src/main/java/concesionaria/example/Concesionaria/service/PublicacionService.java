@@ -232,9 +232,15 @@ public class PublicacionService {
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
     }
 
-    // Corregí un error de tipeo en el 'findByemail' que tenías
+
     private Usuario findVendedorByEmail(String emailVendedor) {
         return usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
+    }
+
+    @Transactional
+    public void marcarComoVendidaYEliminar(Long idPublicacion, String emailVendedor){
+
+        deletePublicacion(idPublicacion, emailVendedor);
     }
 }
