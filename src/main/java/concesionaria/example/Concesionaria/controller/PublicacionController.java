@@ -96,4 +96,14 @@ public class PublicacionController {
         Map<String, String> response = Map.of("mensaje", "Publicación rechazada y eliminada correctamente");
         return ResponseEntity.ok(response);
     }
+
+    // Nuevo endpoint para que el usuario marque como vendida su publicación (que resulta en eliminación)
+    @PatchMapping("/vendida/{id}")
+    public ResponseEntity<?> marcarComoVendidaYEliminar(@PathVariable Long id, Authentication authentication){
+        String emailVendedor = authentication.getName();
+        publicacionService.marcarComoVendidaYEliminar(id, emailVendedor);
+
+        Map<String, String> response = Map.of("mensaje", "Publicación marcada como vendida y eliminada correctamente.");
+        return ResponseEntity.ok(response);
+    }
 }
