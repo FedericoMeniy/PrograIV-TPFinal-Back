@@ -119,7 +119,7 @@ public class PublicacionService {
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
 
-            emailService.sendEmail("nahuelacuna426@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, esperamos puedas vender tu auto pronto!");
+            //emailService.sendEmail("nahuelacuna426@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, esperamos puedas vender tu auto pronto!");
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);

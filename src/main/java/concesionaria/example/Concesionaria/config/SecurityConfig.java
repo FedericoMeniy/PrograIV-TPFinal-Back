@@ -39,13 +39,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login", "/notificacion/**").permitAll()
 
-                        // [CORRECCIÓN] Usamos hasAnyAuthority() para roles sin prefijo ROLE_ - Fede 12/11 21:04
-                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion").hasAnyAuthority("USUARIO", "ADMIN")
-
-                        // [CORRECCIÓN] Usamos hasAuthority() para roles sin prefijo ROLE_ - Fede 12/11 21:04
-                        .requestMatchers("/publicacion/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/reserva/admin/**").hasAuthority("ADMIN")
-
+                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion").hasAnyAuthority("ROLE_USUARIO", "ROLE_ADMIN")
+                        .requestMatchers("/publicacion/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/reserva/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
 
                 )
@@ -60,7 +56,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
 
         // Permite los métodos HTTP que usas
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        //FEDE ACA AGREGUE PATCH PARA CAMBIAR EL ESTADO DE LAS PUBLICACIONES A PENDIENTES (EL ADMIN)
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
         // Permite todas las cabeceras (incluyendo 'Authorization' y 'Content-Type')
         configuration.setAllowedHeaders(Arrays.asList("*"));
