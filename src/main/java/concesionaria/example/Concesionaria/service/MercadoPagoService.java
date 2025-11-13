@@ -1,5 +1,6 @@
 package concesionaria.example.Concesionaria.service;
 
+import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
@@ -23,10 +24,13 @@ public class MercadoPagoService {
     private String frontendURL;
     @Value("${backend.base-url}")
     private String backendURL;
+    @Value("${mercadopago.access-token}")
+    private String accessToken;
 
     public String crearPreferenciaDePago(Publicacion publicacion, Long reservaId, double monto){
 
         try{
+            MercadoPagoConfig.setAccessToken(accessToken);
             //1) Definimos el item que va a pagar el usuario (la reserva)
             PreferenceItemRequest preferenceItemRequest = PreferenceItemRequest.builder()
                     .title("Reserva del auto: " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo())
@@ -38,7 +42,7 @@ public class MercadoPagoService {
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                     .success(frontendURL + "/pago-exitoso")
                     .failure(frontendURL + "/pago-fallido")
-                    .success(frontendURL + "/pago-pendiente")
+                    .pending(frontendURL + "/pago-pendiente")
                     .build();
 
             //3)Configuramos la URK de notificacion (el webhook)
@@ -72,6 +76,7 @@ public class MercadoPagoService {
     }
     public Payment obtenerDetallesDePago(String paymentId) {
         try {
+            MercadoPagoConfig.setAccessToken(accessToken);
             PaymentClient client = new PaymentClient();
             // El ID debe convertirse a Long para la consulta
             return client.get(Long.valueOf(paymentId));
