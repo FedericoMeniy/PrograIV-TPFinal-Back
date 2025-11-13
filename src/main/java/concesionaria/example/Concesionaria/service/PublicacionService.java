@@ -195,6 +195,8 @@ public class PublicacionService {
                 autoExistente.setColor(autoDTO.getColor().trim());
             }
 
+                autoExistente.setPrecio(autoDTO.getPrecio());
+
             // Actualizar ficha técnica solo si viene en el DTO
             if(autoDTO.getFichaTecnica() != null){
                 FichaTecnicaRequestDTO fichaDTO = autoDTO.getFichaTecnica();
