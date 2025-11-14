@@ -112,4 +112,11 @@ public class PublicacionController {
     public PublicacionEstadisticasDTO getPublicacionEstadisticas() {
         return publicacionService.getEstadisticasPublicaciones();
     }
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<?> deletePublicacionAdmin(@PathVariable Long id){
+        publicacionService.deletePublicacionAdmin(id);
+        Map<String, String> response = Map.of("mensaje", "Publicación eliminada correctamente");
+        return ResponseEntity.ok(response);
+    }
 }
