@@ -17,10 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile; // <-- NUEVO IMPORT
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
+import java.util.ArrayList; // <-- NUEVO IMPORT
 import java.util.List;
 
 @Service
@@ -111,13 +111,12 @@ public class PublicacionService {
         if(vendedor.getRol() == Rol.ADMIN){
             publicacion.setEstado(EstadoPublicacion.ACEPTADA);
             publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
+
         }else{
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
-            /*
-            emailService.sendEmail("federicomeniy@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estara pendiente de aceptacion");
 
-             */
+            emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estara pendiente de aceptacion");
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
@@ -129,42 +128,11 @@ public class PublicacionService {
     @Transactional
     public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, String emailVendedor){
         // 1. Buscar la publicación existente
-        Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
+        Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
-        Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido."));
-
-
-        // 2. Verificar permisos - con validaciones mejoradas
-        Usuario vendedorPublicacion = publicacionExistente.getVendedor();
-
-        if(vendedorPublicacion == null){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "La publicacion no tiene vendedor asignado");
-        }
-
-        // Comparar IDs usando Long para evitar problemas de tipos
-        Long idVendedorPublicacion = vendedorPublicacion.getId();
-        Long idVendedorActual = vendedor.getId();
-
-        // También comparar por email como respaldo
-        boolean mismoVendedor = idVendedorPublicacion != null && idVendedorActual != null
-                && idVendedorPublicacion.equals(idVendedorActual);
-
-        boolean mismoEmail = vendedorPublicacion.getEmail() != null
-                && vendedor.getEmail() != null
-                && vendedorPublicacion.getEmail().equalsIgnoreCase(vendedor.getEmail());
-
-        if(!mismoVendedor && !mismoEmail){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "No tienes permiso para modificar esta publicacion. Vendedor publicacion: " +
-                            (vendedorPublicacion.getEmail() != null ? vendedorPublicacion.getEmail() : "null") +
-                            ", Vendedor actual: " + (vendedor.getEmail() != null ? vendedor.getEmail() : "null"));
-        }
-
-        // 3. Si la publicación estaba ACEPTADA, cambiar a PENDIENTE para nueva revisión solo si es USUARIO.
-        if(vendedor.getRol() == Rol.USUARIO && (publicacionExistente.getEstado() == EstadoPublicacion.ACEPTADA || publicacionExistente.getEstado() == EstadoPublicacion.RECHAZADA)){
-            publicacionExistente.setEstado(EstadoPublicacion.PENDIENTE);
+        Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido."));
+        if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para modificar esta publicacion");
         }
 
         Auto autoExistente = publicacionExistente.getAuto();
@@ -201,29 +169,19 @@ public class PublicacionService {
                 autoExistente.setPrecio(autoDTO.getPrecio());
             }
 
-            // Actualizar ficha técnica solo si viene en el DTO
-            if(autoDTO.getFichaTecnica() != null){
-                FichaTecnicaRequestDTO fichaDTO = autoDTO.getFichaTecnica();
+        autoExistente.setMarca(autoDTO.getMarca());
+        autoExistente.setModelo(autoDTO.getModelo());
+        autoExistente.setPrecio(autoDTO.getPrecio());
+        autoExistente.setAnio(autoDTO.getAnio());
+        autoExistente.setKm(autoDTO.getKm());
+        autoExistente.setColor(autoDTO.getColor());
 
-                if(fichaDTO.getMotor() != null && !fichaDTO.getMotor().trim().isEmpty()){
-                    fichaExistente.setMotor(fichaDTO.getMotor().trim());
-                }
-                if(fichaDTO.getCombustible() != null && !fichaDTO.getCombustible().trim().isEmpty()){
-                    fichaExistente.setCombustible(fichaDTO.getCombustible().trim());
-                }
-                if(fichaDTO.getCaja() != null && !fichaDTO.getCaja().trim().isEmpty()){
-                    fichaExistente.setCaja(fichaDTO.getCaja().trim());
-                }
-                if(fichaDTO.getPuertas() != null && !fichaDTO.getPuertas().trim().isEmpty()){
-                    fichaExistente.setPuertas(fichaDTO.getPuertas().trim());
-                }
-                if(fichaDTO.getPotencia() != null && !fichaDTO.getPotencia().trim().isEmpty()){
-                    fichaExistente.setPotencia(fichaDTO.getPotencia().trim());
-                }
-            }
-        }
+        fichaExistente.setMotor(fichaDTO.getMotor());
+        fichaExistente.setCombustible(fichaDTO.getCombustible());
+        fichaExistente.setCaja(fichaDTO.getCaja());
+        fichaExistente.setPuertas(fichaDTO.getPuertas());
+        fichaExistente.setPotencia(fichaDTO.getPotencia());
 
-        // 5. Guardar los cambios
         fichaTecnicaRepository.save(fichaExistente);
         autoRepository.save(autoExistente);
         Publicacion publicacionGuardada = publicacionRepository.save(publicacionExistente);
@@ -233,18 +191,22 @@ public class PublicacionService {
 
     @Transactional
     public void deletePublicacion(Long idPublicacion, String emailVendedor){
-        Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
+
+        Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
+
 
         if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar esta publicacion.");
         }
 
         Auto auto = publicacionExistente.getAuto();
+
+
         FichaTecnica ficha = (auto != null) ? auto.getFichaTecnica() : null;
+
 
         publicacionRepository.delete(publicacionExistente);
 
@@ -263,8 +225,7 @@ public class PublicacionService {
 
     @Transactional
     public PublicacionResponseDTO aprobarPublicacion(Long idPublicacion){
-        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
 
         if(publicacion.getEstado() != EstadoPublicacion.PENDIENTE){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La publicación no está pendiente de aprobación");
@@ -272,16 +233,15 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.ACEPTADA);
         Publicacion publicacionAprobada = publicacionRepository.save(publicacion);
-/*
+
         emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion Aprobada","Tu publicacion en 'MyCar' ha sido aprobada, esperemos puedas vender tu auto pronto!");
-*/
+
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
     @Transactional
     public PublicacionResponseDTO rechazarPublicacion(Long idPublicacion){
-        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada."));
 
         if(publicacion.getEstado() != EstadoPublicacion.PENDIENTE){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La publicacion no esta pendiente para ser rechazada");
@@ -289,11 +249,13 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.RECHAZADA);
         Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
-/*
+
         emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion rechazada","Tu publicacion en 'MyCar' ha sido rechazada, por favor revisa todo correctamente antes de enviar, no se aceptaran cosas fuera de lugar");
-*/
+
+
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
     }
+
 
     private Usuario findVendedorByEmail(String emailVendedor) {
         return usuarioRepository.findByemail(emailVendedor)
@@ -302,6 +264,7 @@ public class PublicacionService {
 
     @Transactional
     public void marcarComoVendidaYEliminar(Long idPublicacion, String emailVendedor){
+
         deletePublicacion(idPublicacion, emailVendedor);
     }
 
