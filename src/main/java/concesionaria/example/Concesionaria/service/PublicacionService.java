@@ -138,10 +138,36 @@ public class PublicacionService {
         Auto autoExistente = publicacionExistente.getAuto();
         FichaTecnica fichaExistente = autoExistente.getFichaTecnica();
 
-        AutoRequestDTO autoDTO = dto.getAuto();
-        FichaTecnicaRequestDTO fichaDTO = autoDTO.getFichaTecnica();
+        // 4. Actualizar solo los campos que vienen en el DTO (actualización parcial)
 
-        publicacionExistente.setDescripcion(dto.getDescripcion());
+        // Actualizar descripción si viene en el DTO
+        if(dto.getDescripcion() != null && !dto.getDescripcion().trim().isEmpty()){
+            publicacionExistente.setDescripcion(dto.getDescripcion().trim());
+        }
+
+        // Actualizar auto solo si viene en el DTO
+        if(dto.getAuto() != null){
+            AutoRequestDTO autoDTO = dto.getAuto();
+
+            // Actualizar campos del auto solo si vienen en el DTO
+            if(autoDTO.getMarca() != null && !autoDTO.getMarca().trim().isEmpty()){
+                autoExistente.setMarca(autoDTO.getMarca().trim());
+            }
+            if(autoDTO.getModelo() != null && !autoDTO.getModelo().trim().isEmpty()){
+                autoExistente.setModelo(autoDTO.getModelo().trim());
+            }
+            if(autoDTO.getAnio() != null){
+                autoExistente.setAnio(autoDTO.getAnio());
+            }
+            if(autoDTO.getKm() != null && !autoDTO.getKm().trim().isEmpty()){
+                autoExistente.setKm(autoDTO.getKm().trim());
+            }
+            if(autoDTO.getColor() != null && !autoDTO.getColor().trim().isEmpty()) {
+                autoExistente.setColor(autoDTO.getColor().trim());
+            }
+            if(autoDTO.getPrecio() != 0.0){
+                autoExistente.setPrecio(autoDTO.getPrecio());
+            }
 
         autoExistente.setMarca(autoDTO.getMarca());
         autoExistente.setModelo(autoDTO.getModelo());
