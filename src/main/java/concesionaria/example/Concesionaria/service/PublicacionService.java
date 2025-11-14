@@ -194,11 +194,12 @@ public class PublicacionService {
             if(autoDTO.getKm() != null && !autoDTO.getKm().trim().isEmpty()){
                 autoExistente.setKm(autoDTO.getKm().trim());
             }
-            if(autoDTO.getColor() != null && !autoDTO.getColor().trim().isEmpty()){
+            if(autoDTO.getColor() != null && !autoDTO.getColor().trim().isEmpty()) {
                 autoExistente.setColor(autoDTO.getColor().trim());
             }
-
-            autoExistente.setPrecio(autoDTO.getPrecio());
+            if(autoDTO.getPrecio() != 0.0){
+                autoExistente.setPrecio(autoDTO.getPrecio());
+            }
 
             // Actualizar ficha técnica solo si viene en el DTO
             if(autoDTO.getFichaTecnica() != null){

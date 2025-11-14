@@ -10,6 +10,7 @@ import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.EstadoReserva;
 import concesionaria.example.Concesionaria.repository.PublicacionRepository;
 import concesionaria.example.Concesionaria.repository.ReservaRepository;
+import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -27,29 +28,35 @@ public class ReservaService {
     private final PublicacionRepository publicacionRepository;
     private final ReservaRepository reservaRepository;
     private final MercadoPagoService mercadoPagoService;
+    private final UsuarioRepository usuarioRepository;
 
     @Transactional
-    public String iniciarReserva(ReservaRequestDTO reservaRequestDTO){
+    public String iniciarReserva(ReservaRequestDTO reservaRequestDTO) {
+        Publicacion publicacion = publicacionRepository.findById(reservaRequestDTO.getIdPublicacion())
+                .orElseThrow(() -> new RuntimeException("La publicación no existe"));
+
+        UsuarioReservaDTO usuarioDTO = reservaRequestDTO.getUsuarioReservaDTO();
+        Usuario usuarioExistente = usuarioRepository.findByemail(usuarioDTO.getEmail())
+                .orElseThrow(() -> new RuntimeException("El usuario no existe"));
 
         Reserva nuevaReserva = new Reserva();
-        Usuario usuario = new Usuario();
-        UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO(reservaRequestDTO.getUsuarioReservaDTO());
-
-        Publicacion publicacion = publicacionRepository.findById(reservaRequestDTO.getIdPublicacion()).orElseThrow(()-> new RuntimeException("La publicacion no existe"));
-
-        usuario.setNombre(usuarioReservaDTO.getNombre());
-        usuario.setTelefono(usuarioReservaDTO.getTelefono());
-        usuario.setEmail(usuarioReservaDTO.getEmail());
-
-        nuevaReserva.setUsuario(usuario);
+        nuevaReserva.setUsuario(usuarioExistente);
         nuevaReserva.setPublicacion(publicacion);
         nuevaReserva.setEstado(EstadoReserva.PENDIENTE);
         nuevaReserva.setFecha(LocalDateTime.now());
-        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio()*0.10);
+        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio() * 0.10);
 
         Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
+        System.out.println("auto:" + reservaPreGuardada.getPublicacion().getAuto().getMarca());
+        System.out.println("id:" + reservaPreGuardada.getPublicacion().getId());
+        System.out.println("precio auto:" + reservaPreGuardada.getPublicacion().getAuto().getPrecio());
 
-        String pagoURL = mercadoPagoService.crearPreferenciaDePago(reservaPreGuardada.getPublicacion(),reservaPreGuardada.getId(),reservaPreGuardada.getMontoReserva());
+        String pagoURL = mercadoPagoService.crearPreferenciaDePago(
+                reservaPreGuardada.getPublicacion(),
+                reservaPreGuardada.getId(),
+                reservaPreGuardada.getMontoReserva()
+        );
+        System.out.println("Funciona hasta aca?");
 
         return pagoURL;
     }
