@@ -1,17 +1,11 @@
 package concesionaria.example.Concesionaria.service;
 
 import concesionaria.example.Concesionaria.dto.*;
-import concesionaria.example.Concesionaria.entity.Auto;
-import concesionaria.example.Concesionaria.entity.FichaTecnica;
-import concesionaria.example.Concesionaria.entity.Publicacion;
-import concesionaria.example.Concesionaria.entity.Usuario;
+import concesionaria.example.Concesionaria.entity.*;
 import concesionaria.example.Concesionaria.enums.EstadoPublicacion;
 import concesionaria.example.Concesionaria.enums.Rol;
 import concesionaria.example.Concesionaria.enums.TipoPublicacion;
-import concesionaria.example.Concesionaria.repository.AutoRepository;
-import concesionaria.example.Concesionaria.repository.FichaTecnicaRepository;
-import concesionaria.example.Concesionaria.repository.PublicacionRepository;
-import concesionaria.example.Concesionaria.repository.UsuarioRepository;
+import concesionaria.example.Concesionaria.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +27,7 @@ public class PublicacionService {
     private final AutoRepository autoRepository;
     private final FichaTecnicaRepository fichaTecnicaRepository;
     private final EmailService emailService;
+    private final ReservaRepository reservaRepository;
 
     // Inyectado explícitamente (Asegúrate que ImageStorageService esté anotado con @Service)
     @Autowired
@@ -284,5 +279,31 @@ public class PublicacionService {
                 .usuario(porUsuario)
                 .concesionaria(porConcesionaria)
                 .build();
+    }
+
+    @Transactional
+    public void deletePublicacionAdmin(Long idPublicacion){
+        Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
+
+        // PRIMERO: Eliminar todas las reservas asociadas a esta publicación
+        List<Reserva> reservas = reservaRepository.findByPublicacion_Id(idPublicacion);
+        if (reservas != null && !reservas.isEmpty()) {
+            reservaRepository.deleteAll(reservas);
+        }
+
+        // SEGUNDO: Eliminar la publicación y sus entidades relacionadas
+        Auto auto = publicacionExistente.getAuto();
+        FichaTecnica ficha = (auto != null) ? auto.getFichaTecnica() : null;
+
+        publicacionRepository.delete(publicacionExistente);
+
+        if(auto != null){
+            autoRepository.delete(auto);
+        }
+
+        if(ficha != null){
+            fichaTecnicaRepository.delete(ficha);
+        }
     }
 }
