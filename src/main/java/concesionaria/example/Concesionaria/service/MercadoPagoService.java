@@ -1,5 +1,6 @@
 package concesionaria.example.Concesionaria.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
@@ -24,56 +25,77 @@ public class MercadoPagoService {
     private String frontendURL;
     @Value("${backend.base-url}")
     private String backendURL;
-    @Value("${mercadopago.access-token}")
+    @Value("${mercadopago.access-token.private}")
     private String accessToken;
 
-    public String crearPreferenciaDePago(Publicacion publicacion, Long reservaId, double monto){
+    public String crearPreferenciaDePago(Publicacion publicacion, Long reservaId, double monto) {
 
-        try{
-            MercadoPagoConfig.setAccessToken(accessToken);
-            //1) Definimos el item que va a pagar el usuario (la reserva)
+        MercadoPagoConfig.setAccessToken(accessToken);
+        System.out.println(accessToken);
+
+        try {
+            // 1) Ítem
             PreferenceItemRequest preferenceItemRequest = PreferenceItemRequest.builder()
                     .title("Reserva del auto: " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo())
                     .quantity(1)
                     .unitPrice(new BigDecimal(monto))
+                    .currencyId("ARS")
                     .build();
 
-            //2) Definimos URLs de retorno
+            // 2) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                     .success(frontendURL + "/pago-exitoso")
                     .failure(frontendURL + "/pago-fallido")
                     .pending(frontendURL + "/pago-pendiente")
                     .build();
 
-            //3)Configuramos la URK de notificacion (el webhook)
+            // 3) Webhook
             String notificacionURL = backendURL + "/notificacion/mercadopago?reserva_id=" + reservaId;
 
-            //4)Creamos la solicitud de preferencia
+            // 4) Preference Request
             List<PreferenceItemRequest> items = new ArrayList<>();
             items.add(preferenceItemRequest);
 
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(items)
-                    // external_reference es clave para identificar la reserva después del pago
                     .externalReference(reservaId.toString())
                     .backUrls(backUrls)
-                    .notificationUrl(notificacionURL) // Aquí configuramos el Webhook
-                    .autoReturn("approved")
+                    .notificationUrl(notificacionURL)
                     .build();
 
-            // 5. Crear la preferencia usando el cliente (SDK)
-            PreferenceClient client = new PreferenceClient();
-            Preference preference = client.create(preferenceRequest);
+            // DEBUG → ver qué se envía a MP
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(preferenceRequest);
+            System.out.println(">>> PreferenceRequest enviado a Mercado Pago:");
+            System.out.println(json);
 
-            // 6. Devolver el link de redirección (init_point)
-            return preference.getInitPoint();
+            // -------------------------------
+            // 🔥 ACÁ VA EL TRY/CATCH ESPECIAL
+            // -------------------------------
+
+            PreferenceClient client = new PreferenceClient();
+
+            try {
+                Preference preference = client.create(preferenceRequest);
+                return preference.getInitPoint();
+
+            } catch (Exception e) {
+                System.err.println(">>> ERROR AL CREAR PREFERENCIA <<<");
+                e.printStackTrace();
+
+                if (e instanceof com.mercadopago.exceptions.MPApiException apiEx) {
+                    System.err.println(">>> RESPONSE MP <<<");
+                    System.err.println(apiEx.getApiResponse().getContent());
+                }
+
+                throw new RuntimeException("Error MercadoPago", e);
+            }
 
         } catch (Exception e) {
-            System.err.println("Error al crear la preferencia de pago en Mercado Pago para Reserva ID " + reservaId + ": " + e.getMessage());
-            throw new RuntimeException("Fallo al iniciar el pago con Mercado Pago", e);
+            throw new RuntimeException("Fallo al crear la preferencia", e);
         }
-
     }
+
     public Payment obtenerDetallesDePago(String paymentId) {
         try {
             MercadoPagoConfig.setAccessToken(accessToken);
