@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion", "/reserva/crear").hasAnyAuthority("ROLE_USUARIO", "ROLE_ADMIN")
                         .requestMatchers("/publicacion/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/reserva/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/usuario/login/google", "/usuario/registro/google").permitAll()
+                        .requestMatchers("/usuario/login", "/usuario/registro").permitAll()
                         .anyRequest().authenticated()
 
                 )
