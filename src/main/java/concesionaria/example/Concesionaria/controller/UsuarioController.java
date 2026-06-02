@@ -88,16 +88,28 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarNombreUsuario(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> actualizarEmailUsuario(@PathVariable Long id, @RequestBody Map<String, String> body) {
         try {
-            String nuevoNombre = body.get("nombre");
+            String nuevoEmail = body.get("email");
 
-            if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("El nombre no puede estar vacío");
+            if (nuevoEmail == null || nuevoEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El email no puede estar vacío");
             }
 
-            Usuario usuarioActualizado = usuarioService.actualizarNombre(id, nuevoNombre);
-            return ResponseEntity.ok(usuarioActualizado);
+            Usuario usuarioActualizado = usuarioService.actualizarEmail(id, nuevoEmail);
+
+            String nuevoToken = jwtService.generateToken(usuarioActualizado);
+
+            // 3. Devolvemos el DTO completo con el nuevo token, igual que hacemos en el Login
+            JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
+                    .token(nuevoToken)
+                    .id(usuarioActualizado.getId())
+                    .nombre(usuarioActualizado.getNombre())
+                    .email(usuarioActualizado.getEmail())
+                    .rol(usuarioActualizado.getRol())
+                    .build();
+
+            return ResponseEntity.ok(jwtResponse);
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
