@@ -52,13 +52,13 @@ public class UsuarioService implements UserDetailsService {
         return usuario;
     }
 
-    public Usuario actualizarNombre(Long id, String nuevoNombre) {
+    public Usuario actualizarEmail(Long id, String nuevoEmail) {
         // 1. Buscar al usuario por ID
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
 
         // 2. Actualizar el nombre
-        usuario.setNombre(nuevoNombre);
+        usuario.setEmail(nuevoEmail);
 
         // 3. Guardar los cambios en la BD
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
