@@ -1,26 +1,30 @@
 package concesionaria.example.Concesionaria.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
+import java.util.Map;
 
 @Service
 public class ImageStorageService {
 
-    // Directorio donde se guardarán las imágenes
-    private final Path rootLocation = Paths.get("uploads");
+    private final Cloudinary cloudinary;
 
-    public ImageStorageService() {
-        try {
-            // Crea el directorio si no existe
-            Files.createDirectories(rootLocation);
-        } catch (IOException e) {
-            throw new RuntimeException("No se pudo inicializar el almacenamiento de imágenes", e);
-        }
+    public ImageStorageService(
+            @Value("${cloudinary.cloud-name}") String cloudName,
+            @Value("${cloudinary.api-key}") String apiKey,
+            @Value("${cloudinary.api-secret}") String apiSecret
+    ) {
+        this.cloudinary = new Cloudinary(ObjectUtils.asMap(
+                "cloud_name", cloudName,
+                "api_key",    apiKey,
+                "api_secret", apiSecret,
+                "secure",     true
+        ));
     }
 
     public String store(MultipartFile file) {
@@ -29,22 +33,27 @@ public class ImageStorageService {
                 throw new RuntimeException("Error: archivo vacío");
             }
 
-            // Generar un nombre de archivo único
             String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String resourceType = "image";
+            if (originalFilename != null) {
+                String lower = originalFilename.toLowerCase();
+                if (lower.endsWith(".mp4") || lower.endsWith(".mov") ||
+                    lower.endsWith(".avi") || lower.endsWith(".webm")) {
+                    resourceType = "video";
+                }
             }
-            String filename = UUID.randomUUID().toString() + extension;
 
-            // Guardar el archivo en el directorio 'uploads'
-            Files.copy(file.getInputStream(), this.rootLocation.resolve(filename));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("resource_type", resourceType)
+            );
 
-            // Devolver la URL pública (la usaremos en el paso 1.4)
-            return "/images/" + filename;
+            // Devuelve la URL publica de Cloudinary (accesible desde cualquier PC)
+            return (String) result.get("secure_url");
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al guardar el archivo", e);
+            throw new RuntimeException("Error al subir el archivo a Cloudinary", e);
         }
     }
 }
