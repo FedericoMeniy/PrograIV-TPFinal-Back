@@ -40,7 +40,7 @@ public class PublicacionService {
     }
 
     public List<PublicacionResponseDTO> getCatalogoTienda(){
-        List<Publicacion> publicaciones = publicacionRepository.findByEstadoAndTipoPublicacion(EstadoPublicacion.ACEPTADA, TipoPublicacion.CONCESIONARIA);
+        List<Publicacion> publicaciones = publicacionRepository.findPublicacionesDisponibles(EstadoPublicacion.ACEPTADA, TipoPublicacion.CONCESIONARIA);
         return PublicacionMapper.toResponseDTOList(publicaciones);
     }
 

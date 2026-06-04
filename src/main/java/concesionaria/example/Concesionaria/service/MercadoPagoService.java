@@ -18,6 +18,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+// 👇 NUEVOS IMPORTS PARA EL TIEMPO
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
 @Service
 public class MercadoPagoService {
 
@@ -56,18 +60,20 @@ public class MercadoPagoService {
             List<PreferenceItemRequest> items = new ArrayList<>();
             items.add(preferenceItemRequest);
 
+            // 🔥 ACÁ CALCULAMOS LOS 10 MINUTOS EXTRA DESDE AHORA (EN FORMATO UTC PARA MP)
+            OffsetDateTime fechaExpiracion = OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(2);
+
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(items)
                     .externalReference(reservaId.toString())
                     .backUrls(backUrls)
                     .notificationUrl(notificacionURL)
+                    // 🔥 ACÁ LE PASAMOS LA FECHA DE VENCIMIENTO A MERCADO PAGO
+                    .expires(true)
+                    .dateOfExpiration(fechaExpiracion)
                     .build();
 
-            // DEBUG → ver qué se envía a MP
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(preferenceRequest);
-            System.out.println(">>> PreferenceRequest enviado a Mercado Pago:");
-            System.out.println(json);
+
 
             // -------------------------------
             // 🔥 ACÁ VA EL TRY/CATCH ESPECIAL
