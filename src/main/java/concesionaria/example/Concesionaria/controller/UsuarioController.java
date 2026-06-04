@@ -6,6 +6,7 @@ import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
 import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
+import concesionaria.example.Concesionaria.service.GoogleTokenVerifierService;
 import concesionaria.example.Concesionaria.service.JwtService; // Importar
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -28,13 +29,15 @@ public class UsuarioController {
     private final AuthenticationManager authenticationManager; // Inyectar
     private final JwtService jwtService;
     private UsuarioRepository usuarioRepository;
+    private final GoogleTokenVerifierService googleTokenVerifierService;
 
     @Autowired // Spring usará este constructor para inyectar todas las dependencias
-    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService, UsuarioRepository usuarioRepository) {
+    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService, UsuarioRepository usuarioRepository, GoogleTokenVerifierService googleTokenVerifierService) {
         this.usuarioService = usuarioService;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
+        this.googleTokenVerifierService = googleTokenVerifierService;
     }
 
     @PostMapping("/registro")
@@ -113,6 +116,111 @@ public class UsuarioController {
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login/google")
+    public ResponseEntity<?> loginConGoogle(@RequestBody Map<String, String> request) {
+        try {
+            String idToken = request.get("idToken");
+            if (idToken == null || idToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El token de Google es requerido");
+            }
+
+            // Verificar el token de Google
+            Map<String, Object> payload = googleTokenVerifierService.verifyToken(idToken);
+            String email = (String) payload.get("email");
+            String nombre = (String) payload.get("name");
+
+            // Buscar usuario por email
+            Usuario usuario = usuarioRepository.findByemail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado. Por favor regístrate primero."));
+
+            // Generar token JWT
+            String token = jwtService.generateToken(usuario);
+
+            // Crear respuesta
+            JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
+                    .token(token)
+                    .id(usuario.getId())
+                    .nombre(usuario.getNombre())
+                    .email(usuario.getEmail())
+                    .rol(usuario.getRol())
+                    .build();
+
+            return ResponseEntity.ok(jwtResponse);
+
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("no encontrado")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al procesar la solicitud: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/registro/google")
+    public ResponseEntity<?> registroConGoogle(@RequestBody Map<String, String> request) {
+        try {
+            String idToken = request.get("idToken");
+            if (idToken == null || idToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El token de Google es requerido");
+            }
+
+            // Verificar el token de Google
+            Map<String, Object> payload = googleTokenVerifierService.verifyToken(idToken);
+            String email = (String) payload.get("email");
+            String nombre = (String) payload.get("name");
+
+            // Verificar si el usuario ya existe
+            if (usuarioRepository.findByemail(email).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("El usuario ya está registrado. Por favor inicia sesión.");
+            }
+
+            String telefono = "0000000000";
+            String password = java.util.UUID.randomUUID().toString();
+
+            // Crear nuevo usuario SIN establecer el rol
+            // El servicio UsuarioService debe establecer el rol como "USER" automáticamente
+            RegistroUsuarioDTO registroDto = new RegistroUsuarioDTO();
+            registroDto.setNombre(nombre != null ? nombre : email.split("@")[0]);
+            registroDto.setEmail(email);
+            registroDto.setTelefono(telefono);
+            registroDto.setPassword(password);
+
+            // IMPORTANTE: NO establecer rol aquí
+            // El servicio UsuarioService debe ignorar cualquier rol que venga en el DTO
+            // y siempre establecer "USER" por defecto
+
+            // Registrar usuario - el servicio establecerá el rol como "USER"
+            Usuario usuarioRegistrado = usuarioService.registrarUsuario(registroDto);
+
+            // Generar token JWT
+            String token = jwtService.generateToken(usuarioRegistrado);
+
+            // Crear respuesta
+            JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
+                    .token(token)
+                    .id(usuarioRegistrado.getId())
+                    .nombre(usuarioRegistrado.getNombre())
+                    .email(usuarioRegistrado.getEmail())
+                    .rol(usuarioRegistrado.getRol()) // Será "USER" siempre
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(jwtResponse);
+
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("ya está registrado") || e.getMessage().contains("CONFLICT")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error al registrar usuario: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al procesar la solicitud: " + e.getMessage());
         }
     }
 }
