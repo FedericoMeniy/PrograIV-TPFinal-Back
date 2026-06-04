@@ -33,6 +33,24 @@ public class ReservaController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
+    @PostMapping("/webhook/{reservaId}")
+    public ResponseEntity<?> recibirNotificacionDePago(
+            @PathVariable Long reservaId,
+            @RequestParam(name = "data.id", required = false) String paymentId,
+            @RequestParam(name = "type", required = false) String type) {
+
+        // Mercado Pago a veces manda avisos de otro tipo, solo nos importan los "payment"
+        if ("payment".equals(type) && paymentId != null) {
+
+            // Llamamos a ese método que habías dejado preparado en el Service
+            reservaService.procesarNotificacionDePago(reservaId, paymentId);
+
+        }
+
+        // ¡MUY IMPORTANTE! Siempre hay que responderle 200 OK a Mercado Pago
+        // rápido, sino piensa que tu servidor está caído y te manda la notificación mil veces.
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/mis-reservas")
     public ResponseEntity<List<ReservaResponseDTO>> obtenerMisReservas(Authentication authentication){

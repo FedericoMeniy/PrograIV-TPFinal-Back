@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,24 +40,62 @@ public class ReservaService {
         Usuario usuarioExistente = usuarioRepository.findByemail(usuarioDTO.getEmail())
                 .orElseThrow(() -> new RuntimeException("El usuario no existe"));
 
-        Reserva nuevaReserva = new Reserva();
-        nuevaReserva.setUsuario(usuarioExistente);
-        nuevaReserva.setPublicacion(publicacion);
-        nuevaReserva.setEstado(EstadoReserva.PENDIENTE);
-        nuevaReserva.setFecha(LocalDateTime.now());
-        nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio() * 0.10);
+        // 1. CANDADO: ¿Ya está vendida?
+        List<Reserva> reservasPagadas = reservaRepository.findByPublicacionIdAndEstado(
+                publicacion.getId(), EstadoReserva.ACEPTADA);
+
+        if (!reservasPagadas.isEmpty()) {
+            throw new RuntimeException("Este vehículo ya fue reservado exitosamente y no admite nuevos pagos.");
+        }
+
+        // 2. BUSCAMOS TODAS LAS RESERVAS PENDIENTES DE ESTE AUTO
+        List<Reserva> reservasPendientes = reservaRepository.findByPublicacionIdAndEstado(
+                publicacion.getId(), EstadoReserva.PENDIENTE);
+
+        Reserva nuevaReserva = null;
+
+        // Recorremos las reservas pendientes
+        for (Reserva existente : reservasPendientes) {
+
+            // Si la reserva pendiente es de este MISMO usuario
+            if (existente.getUsuario().getId().equals(usuarioExistente.getId())) {
+                nuevaReserva = existente; // La reutilizamos
+                nuevaReserva.setFecha(LocalDateTime.now()); // Le renovamos el tiempo
+                break; // Cortamos el ciclo for, ya encontramos la nuestra
+            } else {
+                // Si la reserva es de OTRO usuario, revisamos si ya pasaron sus 10 minutos
+                long minutosTranscurridos = java.time.temporal.ChronoUnit.MINUTES.between(existente.getFecha(), LocalDateTime.now());
+
+                if (minutosTranscurridos > 10) {
+                    // Se le acabó el tiempo al otro, se la cancelamos
+                    existente.setEstado(EstadoReserva.CANCELADA);
+                    reservaRepository.save(existente);
+                } else {
+                    // Todavía está dentro de los 10 minutos de gracia del otro. Bloqueamos al usuario actual.
+                    long minutosRestantes = 10 - minutosTranscurridos;
+                    throw new RuntimeException("El vehículo está siendo reservado por otro cliente. Por favor, intentá de nuevo en " + minutosRestantes + " minutos.");
+                }
+            }
+        }
+
+        // 3. SI NO ENCONTRAMOS NINGUNA RESERVA NUESTRA PARA REUTILIZAR, CREAMOS UNA DE CERO
+        if (nuevaReserva == null) {
+            nuevaReserva = new Reserva();
+            nuevaReserva.setUsuario(usuarioExistente);
+            nuevaReserva.setPublicacion(publicacion);
+            nuevaReserva.setEstado(EstadoReserva.PENDIENTE);
+            nuevaReserva.setFecha(LocalDateTime.now());
+            nuevaReserva.setMontoReserva(publicacion.getAuto().getPrecio() * 0.10);
+        }
 
         Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
-        System.out.println("auto:" + reservaPreGuardada.getPublicacion().getAuto().getMarca());
-        System.out.println("id:" + reservaPreGuardada.getPublicacion().getId());
-        System.out.println("precio auto:" + reservaPreGuardada.getPublicacion().getAuto().getPrecio());
 
+        // 4. MERCADO PAGO
         String pagoURL = mercadoPagoService.crearPreferenciaDePago(
                 reservaPreGuardada.getPublicacion(),
                 reservaPreGuardada.getId(),
                 reservaPreGuardada.getMontoReserva()
         );
-        System.out.println("Funciona hasta aca?");
 
         return pagoURL;
     }

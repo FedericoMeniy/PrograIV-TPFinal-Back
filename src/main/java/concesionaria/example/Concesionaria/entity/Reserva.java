@@ -16,11 +16,11 @@ public class Reserva {
     @ManyToOne
     private Usuario usuario;
 
-    @OneToOne
+    @ManyToOne
     private Publicacion publicacion;
     private LocalDateTime fecha;
 
-    @OneToOne
+    @ManyToOne
     private Auto idAuto;
     private EstadoReserva estado;
     private double montoReserva;
