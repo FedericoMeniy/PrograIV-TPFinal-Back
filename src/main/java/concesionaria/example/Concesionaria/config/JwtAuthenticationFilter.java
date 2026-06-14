@@ -1,6 +1,7 @@
 package concesionaria.example.Concesionaria.config;
 
 import concesionaria.example.Concesionaria.service.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,8 +9,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority; // Importar
-import org.springframework.security.core.authority.SimpleGrantedAuthority; // Importar
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,19 +19,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays; // Importar
-import java.util.Collection; // Importar
-import java.util.stream.Collectors; // Importar
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    // Soy yo devuelta mas cosas de roles - authority
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    // Se mantiene el constructor original
     public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
@@ -52,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String userEmail;
+        String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -60,43 +62,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        try {
+            userEmail = jwtService.extractUsername(jwt);
+            log.debug("[JWT] Email extraido del token: {}", userEmail);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                boolean valid = jwtService.isTokenValid(jwt, userDetails);
+                log.debug("[JWT] Token valido para {}: {}", userEmail, valid);
 
-                // --- INICIO DE LA CORRECCIÓN CRÍTICA: LECTURA DE ROLES DESDE JWT ---
+                if (valid) {
+                    String authoritiesString = jwtService.extractClaim(jwt, claims -> claims.get("authority", String.class));
+                    log.debug("[JWT] Authorities en token: {}", authoritiesString);
 
-                // 1. Extraer la cadena de roles (ej: "ADMIN,USUARIO") del claim 'authority' del token
-                String authoritiesString = jwtService.extractClaim(jwt, claims -> claims.get("authority", String.class));
+                    Collection<? extends GrantedAuthority> authorities;
 
-                Collection<? extends GrantedAuthority> authorities;
+                    if (authoritiesString != null && !authoritiesString.isEmpty()) {
+                        authorities = Arrays.stream(authoritiesString.split(","))
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList());
+                    } else {
+                        authorities = userDetails.getAuthorities();
+                    }
 
-                if (authoritiesString != null && !authoritiesString.isEmpty()) {
-                    // 2. Convertir la cadena de roles a objetos GrantedAuthority
-                    authorities = Arrays.stream(authoritiesString.split(","))
-                            .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toList());
-                } else {
-                    // Fallback: Si no hay roles en el token (lo cual no debería ocurrir con admin), usar los roles de la DB
-                    authorities = userDetails.getAuthorities();
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            authorities
+                    );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    log.debug("[JWT] Autenticacion establecida para: {}", userEmail);
                 }
-
-                // 3. Crear objeto de autenticación para Spring Security usando las autoridades extraídas del JWT
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        authorities // <--- AHORA USA LAS AUTORIDADES DEL TOKEN
-                );
-                // 4. Establecer detalles y autenticar
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+        } catch (JwtException e) {
+            // Token inválido, malformado o con firma incorrecta — limpiamos el contexto
+            log.warn("[JWT] Token JWT inválido o expirado: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+        } catch (Exception e) {
+            // Error de infraestructura (BD remota caída, timeout de conexión, etc.)
+            // NO limpiamos el contexto de seguridad — simplemente logueamos el error
+            log.error("[JWT] ERROR al validar token (posible problema de BD/red): {} - {}",
+                    e.getClass().getSimpleName(), e.getMessage(), e);
+            // No hacemos clearContext() aquí para no destruir autenticaciones previas
+            // Spring Security rechazará el request si el endpoint requiere auth
         }
+
         filterChain.doFilter(request, response);
     }
-}
+}
