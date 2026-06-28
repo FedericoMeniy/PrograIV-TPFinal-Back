@@ -143,7 +143,7 @@ public class UsuarioController {
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
                     .token(token)
                     .id(usuario.getId())
-                    .nombre(usuario.getNombre())
+                    .nombre(capitalize(usuario.getNombre()))
                     .email(usuario.getEmail())
                     .rol(usuario.getRol())
                     .build();
@@ -186,7 +186,7 @@ public class UsuarioController {
             // Crear nuevo usuario SIN establecer el rol
             // El servicio UsuarioService debe establecer el rol como "USER" automáticamente
             RegistroUsuarioDTO registroDto = new RegistroUsuarioDTO();
-            registroDto.setNombre(nombre != null ? nombre : email.split("@")[0]);
+            registroDto.setNombre(capitalize(nombre != null ? nombre : email.split("@")[0]));
             registroDto.setEmail(email);
             registroDto.setTelefono(telefono);
             registroDto.setPassword(password);
@@ -223,4 +223,19 @@ public class UsuarioController {
                     .body("Error al procesar la solicitud: " + e.getMessage());
         }
     }
-}
+
+    // --- HELPER ---
+    private String capitalize(String text) {
+        if (text == null || text.isBlank()) return text;
+        String[] words = text.trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                sb.append(Character.toUpperCase(word.charAt(0)))
+                  .append(word.substring(1).toLowerCase())
+                  .append(" ");
+            }
+        }
+        return sb.toString().trim();
+    }
+}

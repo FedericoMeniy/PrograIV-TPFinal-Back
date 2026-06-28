@@ -27,8 +27,24 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
 
+                // No usar sesiones (stateless JWT)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Deshabilitar login de formulario y OAuth2 login automatico
+                // (manejamos OAuth2 manualmente via GoogleTokenVerifierService)
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .oauth2Login(oauth2 -> oauth2.disable())
+
+                // Retornar 401 JSON en vez de redirigir a Google para requests no autenticados
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\": \"No autenticado. Token JWT requerido.\"");
+                        })
+                )
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -39,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publicacion/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login", "/notificacion/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion", "/reserva/crear").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion", "/reserva/crear").authenticated()
                         .requestMatchers("/publicacion/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/reserva/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/usuario/login/google", "/usuario/registro/google").permitAll()
