@@ -29,8 +29,6 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     private Rol rol;
     private String telefono;
 
-
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // CORRECCIÓN: Se añade el prefijo ROLE_ al nombre del rol.
@@ -62,4 +60,5 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     public boolean isEnabled() {
         return true;
     }
+
 }

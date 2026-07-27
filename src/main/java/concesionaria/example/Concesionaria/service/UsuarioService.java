@@ -32,6 +32,11 @@ public class UsuarioService implements UserDetailsService {
         if(usuarioRepository.findByemail(registroUsuarioDto.getEmail()).isPresent()){
             throw new RuntimeException("El email ya esta en uso");
         }
+
+        if(usuarioRepository.existsByTelefono(registroUsuarioDto.getTelefono())){
+            throw new RuntimeException("El telefono ya esta registrado.");
+        }
+
         Usuario nuevoUsuario = new Usuario();
         nuevoUsuario.setEmail(registroUsuarioDto.getEmail());
         nuevoUsuario.setNombre(registroUsuarioDto.getNombre());
