@@ -1,6 +1,7 @@
 package concesionaria.example.Concesionaria.controller;
 
  // Importar
+import concesionaria.example.Concesionaria.dto.CompletarPerfilRequest;
 import concesionaria.example.Concesionaria.dto.JwtResponseDTO;
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
 import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
@@ -19,6 +20,7 @@ import org.springframework.security.core.Authentication; // Importar
 import org.springframework.security.core.AuthenticationException; // Importar
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -77,6 +79,7 @@ public class UsuarioController {
                     .nombre(usuarioResponse.getNombre())
                     .email(usuarioResponse.getEmail())
                     .rol(usuarioResponse.getRol())
+                    .telefono(usuarioResponse.getTelefono())
                     .build();
 
             return ResponseEntity.ok(jwtResponse);
@@ -146,6 +149,7 @@ public class UsuarioController {
                     .nombre(capitalize(usuario.getNombre()))
                     .email(usuario.getEmail())
                     .rol(usuario.getRol())
+                    .telefono(usuario.getTelefono())
                     .build();
 
             return ResponseEntity.ok(jwtResponse);
@@ -180,7 +184,6 @@ public class UsuarioController {
                         .body("El usuario ya está registrado. Por favor inicia sesión.");
             }
 
-            String telefono = "0000000000";
             String password = java.util.UUID.randomUUID().toString();
 
             // Crear nuevo usuario SIN establecer el rol
@@ -188,7 +191,7 @@ public class UsuarioController {
             RegistroUsuarioDTO registroDto = new RegistroUsuarioDTO();
             registroDto.setNombre(capitalize(nombre != null ? nombre : email.split("@")[0]));
             registroDto.setEmail(email);
-            registroDto.setTelefono(telefono);
+            registroDto.setTelefono(null);
             registroDto.setPassword(password);
 
             // IMPORTANTE: NO establecer rol aquí
@@ -208,6 +211,7 @@ public class UsuarioController {
                     .nombre(usuarioRegistrado.getNombre())
                     .email(usuarioRegistrado.getEmail())
                     .rol(usuarioRegistrado.getRol()) // Será "USER" siempre
+                    .telefono(usuarioRegistrado.getTelefono())
                     .build();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(jwtResponse);
@@ -238,4 +242,19 @@ public class UsuarioController {
         }
         return sb.toString().trim();
     }
-}
+
+    @PostMapping("/completar-telefono")
+    public ResponseEntity<?> completarTelefono(@RequestParam String email, @RequestParam String telefono){
+        if(usuarioRepository.existsByTelefono(telefono)){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("El telefono ya esta registrado.");
+        }
+
+        Usuario usuario = usuarioRepository.findByemail(email).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setTelefono(telefono);
+
+        usuarioRepository.save(usuario);
+
+        return ResponseEntity.ok().build();
+    }
+}
