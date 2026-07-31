@@ -69,7 +69,7 @@ public class UsuarioController {
             String token = jwtService.generateToken(usuarioLogueado);
 
             // 4. Obtener el objeto Usuario sin el password (o solo los datos a devolver)
-            Usuario usuarioResponse = usuarioRepository.findByemail(usuarioLogueado.getEmail()).orElseThrow(() -> new RuntimeException("Usuario no encontrado."));;;
+            Usuario usuarioResponse = usuarioRepository.findByemail(usuarioLogueado.getEmail()).orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
 
             // 5. Devolver la respuesta con el token y datos del usuario
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()

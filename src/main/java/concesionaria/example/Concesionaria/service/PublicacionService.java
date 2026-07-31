@@ -308,6 +308,22 @@ public class PublicacionService {
         long porUsuario = publicacionRepository.countByTipoPublicacion(TipoPublicacion.USUARIO);
         long porConcesionaria = publicacionRepository.countByTipoPublicacion(TipoPublicacion.CONCESIONARIA);
 
+        List<Object[]> topMarcasResult = publicacionRepository.findTopMarcas();
+        java.util.Map<String, Long> topMarcasMap = new java.util.LinkedHashMap<>();
+        
+        int limit = 0;
+        for (Object[] row : topMarcasResult) {
+            if (limit >= 5) break; // Solo top 5
+            String marca = (String) row[0];
+            Long count = (Long) row[1];
+            // Normalizar marca
+            marca = marca.trim();
+            marca = marca.substring(0, 1).toUpperCase() + marca.substring(1).toLowerCase();
+            // Sumar al map
+            topMarcasMap.put(marca, topMarcasMap.getOrDefault(marca, 0L) + count);
+            limit++;
+        }
+
         return PublicacionEstadisticasDTO.builder()
                 .totalPublicaciones(total)
                 .pendientes(pendientes)
@@ -315,6 +331,7 @@ public class PublicacionService {
                 .rechazadas(rechazadas)
                 .usuario(porUsuario)
                 .concesionaria(porConcesionaria)
+                .topMarcas(topMarcasMap)
                 .build();
     }
 
