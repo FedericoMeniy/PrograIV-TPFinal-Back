@@ -1,10 +1,7 @@
 package concesionaria.example.Concesionaria.controller;
 
  // Importar
-import concesionaria.example.Concesionaria.dto.CompletarPerfilRequest;
-import concesionaria.example.Concesionaria.dto.JwtResponseDTO;
-import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
-import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
+import concesionaria.example.Concesionaria.dto.*;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import concesionaria.example.Concesionaria.service.GoogleTokenVerifierService;
@@ -19,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication; // Importar
 import org.springframework.security.core.AuthenticationException; // Importar
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -256,5 +255,17 @@ public class UsuarioController {
         usuarioRepository.save(usuario);
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/favoritos/{idPublicacion}")
+    public ResponseEntity<?> toggleFavorito(@PathVariable Long idPublicacion, Authentication authentication) {
+        usuarioService.toggleFavorito(authentication.getName(), idPublicacion);
+        return ResponseEntity.ok(Map.of("mensaje", "Favorito actualizado"));
+    }
+
+    @GetMapping("/favoritos")
+    public ResponseEntity<List<PublicacionResponseDTO>> getFavoritos(Authentication authentication) {
+        List<PublicacionResponseDTO> favoritos = usuarioService.getFavoritos(authentication.getName());
+        return ResponseEntity.ok(favoritos);
     }
 }
