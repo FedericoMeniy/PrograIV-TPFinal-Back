@@ -1,9 +1,12 @@
 package concesionaria.example.Concesionaria.service;
 
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
+import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
+import concesionaria.example.Concesionaria.entity.Publicacion;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.Rol;
+import concesionaria.example.Concesionaria.repository.PublicacionRepository;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +16,18 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 // Implementar UserDetailsService para que Spring Security cargue usuarios
 public class UsuarioService implements UserDetailsService {
 
     private UsuarioRepository usuarioRepository;
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private PublicacionRepository publicacionRepository;
 
     @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
@@ -76,5 +85,29 @@ public class UsuarioService implements UserDetailsService {
         responseUsuario.setRol(usuarioActualizado.getRol());
 
         return responseUsuario;
+    }
+
+    @Transactional
+    public void toggleFavorito(String emailUsuario, Long idPublicacion) {
+        Usuario usuario = usuarioRepository.findByemail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
+                .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
+
+        if (usuario.getFavoritos().contains(publicacion)) {
+            usuario.getFavoritos().remove(publicacion); // Si ya es favorito, lo saca (dislike)
+        } else {
+            usuario.getFavoritos().add(publicacion); // Si no es favorito, lo agrega (like)
+        }
+        usuarioRepository.save(usuario);
+    }
+
+    public List<PublicacionResponseDTO> getFavoritos(String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByemail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        return usuario.getFavoritos().stream()
+                .map(PublicacionMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 }
