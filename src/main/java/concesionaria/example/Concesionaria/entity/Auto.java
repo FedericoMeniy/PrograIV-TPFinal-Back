@@ -15,6 +15,7 @@ public class Auto {
     private Long id;
     private String marca;
     private String modelo;
+    @Column(nullable = false)
     private double precio;
     private Integer anio;
     private String km;

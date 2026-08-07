@@ -12,12 +12,22 @@ import java.util.List;
 
 @Repository
 public interface PublicacionRepository extends JpaRepository<Publicacion, Long> {
-    List<Publicacion> findByVendedorId(Long idUsuario);
-    List<Publicacion> findByEstadoAndTipoPublicacion(EstadoPublicacion estadp, TipoPublicacion tipo);
-    List<Publicacion> findByEstado(EstadoPublicacion estado);
+    @Query("SELECT p FROM Publicacion p JOIN FETCH p.auto a JOIN FETCH p.vendedor v LEFT JOIN FETCH a.fichaTecnica f WHERE p.vendedor.id = :idUsuario")
+    List<Publicacion> findByVendedorId(@Param("idUsuario") Long idUsuario);
+
+    @Query("SELECT p FROM Publicacion p JOIN FETCH p.auto a JOIN FETCH p.vendedor v LEFT JOIN FETCH a.fichaTecnica f WHERE p.estado = :estado AND p.tipoPublicacion = :tipo")
+    List<Publicacion> findByEstadoAndTipoPublicacion(@Param("estado") EstadoPublicacion estado, @Param("tipo") TipoPublicacion tipo);
+
+    @Query("SELECT p FROM Publicacion p JOIN FETCH p.auto a JOIN FETCH p.vendedor v LEFT JOIN FETCH a.fichaTecnica f WHERE p.estado = :estado")
+    List<Publicacion> findByEstado(@Param("estado") EstadoPublicacion estado);
+
     long countByEstado(EstadoPublicacion estado);
     long countByTipoPublicacion(TipoPublicacion tipo);
+
     @Query("SELECT p FROM Publicacion p " +
+            "JOIN FETCH p.auto a " +
+            "JOIN FETCH p.vendedor v " +
+            "LEFT JOIN FETCH a.fichaTecnica f " +
             "WHERE p.estado = :estadoPub " +
             "AND p.tipoPublicacion = :tipoPub " +
             "AND NOT EXISTS (SELECT r FROM Reserva r WHERE r.publicacion = p AND r.estado = concesionaria.example.Concesionaria.enums.EstadoReserva.ACEPTADA)")
@@ -25,4 +35,7 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
             @Param("estadoPub") EstadoPublicacion estadoPub,
             @Param("tipoPub") TipoPublicacion tipoPub
     );
+
+    @Query("SELECT a.marca, COUNT(p) FROM Publicacion p JOIN p.auto a WHERE p.estado = concesionaria.example.Concesionaria.enums.EstadoPublicacion.ACEPTADA GROUP BY a.marca ORDER BY COUNT(p) DESC")
+    List<Object[]> findTopMarcas();
 }

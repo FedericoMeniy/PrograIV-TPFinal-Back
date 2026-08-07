@@ -18,11 +18,17 @@ public class Reserva {
 
     @ManyToOne
     private Publicacion publicacion;
-    private LocalDateTime fecha;
 
     @ManyToOne
+    @JoinColumn(name = "auto_id")
     private Auto idAuto;
+
+    @Enumerated(EnumType.STRING)
     private EstadoReserva estado;
+
+    private LocalDateTime fecha;
+
+    @Column(nullable = false)
     private double montoReserva;
     private String paymentId;
 }

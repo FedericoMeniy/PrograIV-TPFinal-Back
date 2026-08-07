@@ -24,7 +24,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
 
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
 
                 // No usar sesiones (stateless JWT)
@@ -71,8 +71,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permite peticiones desde tu frontend de Angular
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        // Permite peticiones desde tu frontend de Angular y cualquier puerto local
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
 
         // Permite los métodos HTTP que usas
         //FEDE ACA AGREGUE PATCH PARA CAMBIAR EL ESTADO DE LAS PUBLICACIONES A PENDIENTES (EL ADMIN)

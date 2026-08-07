@@ -45,12 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // Permitir que las solicitudes OPTIONS (preflight de CORS) pasen
-        if (request.getMethod().equals("OPTIONS")) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            filterChain.doFilter(request, response);
-            return;
-        }
+        // Las solicitudes OPTIONS (preflight CORS) ya son manejadas por CorsFilterConfig
+        // y nunca llegan hasta aquí.
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;

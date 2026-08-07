@@ -13,4 +13,5 @@ public class JwtResponseDTO {
     private String nombre;
     private String email;
     private Rol rol;
+    private String telefono;
 }

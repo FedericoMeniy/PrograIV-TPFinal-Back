@@ -29,7 +29,13 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     private Rol rol;
     private String telefono;
 
-
+    @ManyToMany
+    @JoinTable(
+            name = "usuario_favoritos",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "publicacion_id")
+    )
+    private List<Publicacion> favoritos = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -62,4 +68,5 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     public boolean isEnabled() {
         return true;
     }
+
 }
