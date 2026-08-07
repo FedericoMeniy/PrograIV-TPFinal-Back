@@ -110,7 +110,7 @@ public class PublicacionService {
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
 
-            emailService.sendEmail(vendedor.getEmail(),"Publicacion creada","Tu publicacion en 'MyCar' ha sido realizada, estará pendiente de aceptacion");
+            emailService.sendEmail(vendedor.getEmail(),"Compra exitosa","Tu compra en 'MyCar' ha sido realizada, tu nuevo auto llegará a la Argentina en 2 meses aproximadamente. Gracias por confiar en nosotros!");
 
 
         }

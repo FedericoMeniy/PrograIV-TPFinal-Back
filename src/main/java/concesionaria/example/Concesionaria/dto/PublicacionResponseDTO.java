@@ -13,4 +13,5 @@ public class PublicacionResponseDTO {
     private String nombreVendedor;
     private String vendedorTelefono;
     private AutoResponseDTO auto;
+    private String emailVendedor;
 }

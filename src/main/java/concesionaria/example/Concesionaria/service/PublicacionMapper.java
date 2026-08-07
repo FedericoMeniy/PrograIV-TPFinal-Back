@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class PublicacionMapper {
 
     // Convierte UNA Publicacion (Entidad) a UNA PublicacionResponseDTO
+    // Convierte UNA Publicacion (Entidad) a UNA PublicacionResponseDTO
     public static PublicacionResponseDTO toResponseDTO(Publicacion publicacion) {
         PublicacionResponseDTO dto = new PublicacionResponseDTO();
         dto.setId(publicacion.getId());
@@ -23,11 +24,16 @@ public class PublicacionMapper {
         dto.setEstado(publicacion.getEstado());
         dto.setTipoPublicacion(publicacion.getTipoPublicacion());
 
-        // Mapeo del nombre del vendedor (ya existía)
-        dto.setNombreVendedor(publicacion.getVendedor().getNombre());
+        if (publicacion.getVendedor() != null) {
+            // Mapeo del nombre del vendedor (ya existía)
+            dto.setNombreVendedor(publicacion.getVendedor().getNombre());
 
-        // ⭐️ LÍNEA CLAVE AÑADIDA: Mapeo del teléfono del vendedor
-        dto.setVendedorTelefono(publicacion.getVendedor().getTelefono());
+            // Mapeo del teléfono del vendedor
+            dto.setVendedorTelefono(publicacion.getVendedor().getTelefono());
+
+            // 🔥 ESTA ES LA LÍNEA QUE TE FALTA PARA QUE FUNCIONE EL CHAT 🔥
+            dto.setEmailVendedor(publicacion.getVendedor().getEmail());
+        }
 
         dto.setAuto(toAutoResponseDTO(publicacion.getAuto()));
         return dto;
