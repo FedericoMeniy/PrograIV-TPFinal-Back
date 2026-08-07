@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publicacion/usados").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicacion/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
+                        .requestMatchers("/ws-chat/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario/registro", "/usuario/login", "/notificacion/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/publicacion/crearPublicacion", "/reserva/crear").authenticated()
                         .requestMatchers("/publicacion/admin/**").hasAuthority("ROLE_ADMIN")
