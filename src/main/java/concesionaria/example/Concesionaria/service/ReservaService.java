@@ -1,6 +1,7 @@
 package concesionaria.example.Concesionaria.service;
 
 import com.mercadopago.resources.payment.Payment;
+import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.dto.ReservaRequestDTO;
 import concesionaria.example.Concesionaria.dto.ReservaResponseDTO;
 import concesionaria.example.Concesionaria.dto.UsuarioReservaDTO;
@@ -130,7 +131,9 @@ public class ReservaService {
 
         reservaResponseDTO.setUsuarioReserva(usuarioReservaDTO);
         reservaResponseDTO.setFecha(reserva.getFecha());
-        reservaResponseDTO.setIdPublicacion(reserva.getPublicacion().getId());
+
+        PublicacionResponseDTO pubDto = PublicacionMapper.toResponseDTO(reserva.getPublicacion());
+        reservaResponseDTO.setPublicacion(pubDto);
 
         return reservaResponseDTO;
     }
@@ -197,9 +200,9 @@ public class ReservaService {
             reserva.setEstado(reservaDTO.getEstadoReserva());
         }
 
-        // Modificación de la publicación (solo si viene el ID)
-        if (reservaDTO.getIdPublicacion() != null) {
-            Publicacion publicacion = publicacionRepository.findById(reservaDTO.getIdPublicacion())
+        // Modificación de la publicación (ahora sacamos el ID del objeto anidado)
+        if (reservaDTO.getPublicacion() != null && reservaDTO.getPublicacion().getId() != null) {
+            Publicacion publicacion = publicacionRepository.findById(reservaDTO.getPublicacion().getId())
                     .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
             reserva.setPublicacion(publicacion);
         }

@@ -13,7 +13,7 @@ public class ReservaResponseDTO {
     private Long id;
     private UsuarioReservaDTO usuarioReserva;
     private LocalDateTime fecha;
-    private Long idPublicacion;
+    private PublicacionResponseDTO publicacion;
     private double montoReserva;
     private EstadoReserva estadoReserva;
 }
