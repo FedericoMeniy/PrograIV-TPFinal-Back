@@ -120,10 +120,9 @@ public class ReservaService {
         UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO();
         Usuario usuario = reserva.getUsuario();
 
-// ← AGREGAR ESTA LÍNEA (al principio del método, después de crear el DTO)
         reservaResponseDTO.setId(reserva.getId());
-
         reservaResponseDTO.setEstadoReserva(reserva.getEstado());
+        reservaResponseDTO.setMontoReserva(reserva.getMontoReserva());
 
         usuarioReservaDTO.setNombre(usuario.getNombre());
         usuarioReservaDTO.setEmail(usuario.getEmail());
