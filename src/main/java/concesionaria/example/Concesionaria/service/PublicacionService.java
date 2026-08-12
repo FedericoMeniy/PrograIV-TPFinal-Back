@@ -110,7 +110,7 @@ public class PublicacionService {
             publicacion.setEstado(EstadoPublicacion.PENDIENTE);
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
 
-            emailService.sendEmail(vendedor.getEmail(),"Compra exitosa","Tu compra en 'MyCar' ha sido realizada, tu nuevo auto llegará a la Argentina en 2 meses aproximadamente. Gracias por confiar en nosotros!");
+            emailService.sendEmail(vendedor.getEmail(),"Publicación creada","Tu publicación en 'MyCar' ha sido realizada, estará pendiente de aceptación.");
 
 
         }
@@ -122,14 +122,13 @@ public class PublicacionService {
     }
 
     @Transactional
-    public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, String emailVendedor){
+    public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, List<MultipartFile> files, String emailVendedor){
         // 1. Buscar la publicación existente
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido."));
-
 
         // 2. Verificar permisos - con validaciones mejoradas
         Usuario vendedorPublicacion = publicacionExistente.getVendedor();
@@ -167,16 +166,13 @@ public class PublicacionService {
 
         // 4. Actualizar solo los campos que vienen en el DTO (actualización parcial)
 
-        // Actualizar descripción si viene en el DTO
         if(dto.getDescripcion() != null && !dto.getDescripcion().trim().isEmpty()){
             publicacionExistente.setDescripcion(dto.getDescripcion().trim());
         }
 
-        // Actualizar auto solo si viene en el DTO
         if(dto.getAuto() != null){
             AutoRequestDTO autoDTO = dto.getAuto();
 
-            // Actualizar campos del auto solo si vienen en el DTO
             if(autoDTO.getMarca() != null && !autoDTO.getMarca().trim().isEmpty()){
                 autoExistente.setMarca(autoDTO.getMarca().trim());
             }
@@ -196,7 +192,6 @@ public class PublicacionService {
                 autoExistente.setPrecio(autoDTO.getPrecio());
             }
 
-            // Actualizar ficha técnica solo si viene en el DTO
             if(autoDTO.getFichaTecnica() != null){
                 FichaTecnicaRequestDTO fichaDTO = autoDTO.getFichaTecnica();
 
@@ -218,8 +213,37 @@ public class PublicacionService {
             }
         }
 
-        // 5. Guardar los cambios
-        fichaTecnicaRepository.save(fichaExistente);
+        // 5. Manejo de archivos (¡ACÁ ESTÁ LA MAGIA PARA COMBINAR VIEJOS Y NUEVOS!)
+        List<String> urlsCombinadas = new ArrayList<>();
+
+        // a) Rescatar las URLs viejas que mandó el frontend (las que no se borraron)
+        if (dto.getAuto() != null && dto.getAuto().getImagenesUrl() != null) {
+            for (String urlVieja : dto.getAuto().getImagenesUrl()) {
+                if (urlVieja != null && !urlVieja.trim().isEmpty()) {
+                    // Le quitamos el dominio para mantener la ruta relativa en la BD
+                    String urlLimpia = urlVieja.replace("http://localhost:8080", "");
+                    urlsCombinadas.add(urlLimpia);
+                }
+            }
+        }
+
+        // b) Procesar los archivos nuevos y sumarlos a la lista
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    String nuevaUrl = imageStorageService.store(file);
+                    urlsCombinadas.add(nuevaUrl);
+                }
+            }
+        }
+
+        // c) Le asignamos la lista final (viejos + nuevos) al auto
+        autoExistente.setImagenesUrl(urlsCombinadas);
+
+        // 6. Guardar los cambios
+        if(fichaExistente != null) {
+            fichaTecnicaRepository.save(fichaExistente);
+        }
         autoRepository.save(autoExistente);
         Publicacion publicacionGuardada = publicacionRepository.save(publicacionExistente);
 
@@ -234,12 +258,23 @@ public class PublicacionService {
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no válido"));
 
-        if(!publicacionExistente.getVendedor().getId().equals(vendedor.getId())){
+
+        Usuario vendedorPublicacion = publicacionExistente.getVendedor();
+
+        // 3. Validación CLAVE: Evitar el NullPointerException si es una publicación de prueba vieja
+        if (vendedorPublicacion == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "La publicacion está rota (no tiene vendedor asignado en la BD). Eliminála manualmente desde la base de datos.");
+        }
+
+        if(!vendedorPublicacion.getId().equals(vendedor.getId())){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar esta publicacion.");
         }
 
         Auto auto = publicacionExistente.getAuto();
         FichaTecnica ficha = (auto != null) ? auto.getFichaTecnica() : null;
+
+        publicacionRepository.eliminarDeTodosLosFavoritos(idPublicacion);
+        publicacionRepository.eliminarReservasDePublicacion(idPublicacion);
 
         publicacionRepository.delete(publicacionExistente);
 
@@ -267,9 +302,12 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.ACEPTADA);
         Publicacion publicacionAprobada = publicacionRepository.save(publicacion);
-/*
-        emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion Aprobada","Tu publicacion en 'MyCar' ha sido aprobada, esperemos puedas vender tu auto pronto!");
-*/
+
+        String emailVendedor = publicacion.getVendedor().getEmail();
+        String nombreAuto = publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo();
+
+        emailService.sendEmail(emailVendedor, "¡Tu publicación fue aprobada!", "Hola, tu publicación del " + nombreAuto + " en 'MyCar' ha sido aprobada. ¡Esperamos que puedas vender tu auto pronto!");
+
         return PublicacionMapper.toResponseDTO(publicacionAprobada);
     }
 
@@ -284,9 +322,12 @@ public class PublicacionService {
 
         publicacion.setEstado(EstadoPublicacion.RECHAZADA);
         Publicacion publicacionRechazada = publicacionRepository.save(publicacion);
-/*
-        emailService.sendEmail("pellegrinijulianmauro@gmail.com","Publicacion rechazada","Tu publicacion en 'MyCar' ha sido rechazada, por favor revisa todo correctamente antes de enviar, no se aceptaran cosas fuera de lugar");
-*/
+
+        String emailVendedor = publicacion.getVendedor().getEmail();
+        String nombreAuto = publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo();
+
+        emailService.sendEmail(emailVendedor, "Publicación rechazada", "Hola, tu publicación del " + nombreAuto + " en 'MyCar' ha sido rechazada. Por favor, revisa que los datos, imágenes y videos sean correctos antes de volver a enviarla.");
+
         return PublicacionMapper.toResponseDTO(publicacionRechazada);
     }
 

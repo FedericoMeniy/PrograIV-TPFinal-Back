@@ -6,6 +6,7 @@ import concesionaria.example.Concesionaria.dto.PublicacionRequestDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.service.PublicacionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -61,10 +62,12 @@ public class PublicacionController {
         return publicacionService.postPublicacion(publicacionDTO, files, emailVendedor);
     }
 
-    @PutMapping("/{id}")
-    public PublicacionResponseDTO putPublicacion(@PathVariable Long id, @RequestBody PublicacionRequestDTO publicacionDTO, Authentication authentication){
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PublicacionResponseDTO putPublicacion(@PathVariable Long id,
+                                                 @RequestPart("publicacion") PublicacionRequestDTO publicacionDTO,
+                                                 @RequestPart(value = "files", required = false) List<MultipartFile>files, Authentication authentication){
         String emailVendedor = authentication.getName();
-        return publicacionService.putPublicacion(id, publicacionDTO, emailVendedor);
+        return publicacionService.putPublicacion(id, publicacionDTO, files, emailVendedor);
     }
 
     @DeleteMapping("/{id}")
