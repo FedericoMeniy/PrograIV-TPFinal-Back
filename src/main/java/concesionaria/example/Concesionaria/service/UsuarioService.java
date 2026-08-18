@@ -7,6 +7,7 @@ import concesionaria.example.Concesionaria.entity.Publicacion;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.Rol;
 import concesionaria.example.Concesionaria.repository.PublicacionRepository;
+import concesionaria.example.Concesionaria.repository.ReservaRepository;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,12 @@ public class UsuarioService implements UserDetailsService {
 
     @Autowired
     private PublicacionRepository publicacionRepository;
+
+    @Autowired
+    private ReservaRepository reservaRepository;
+
+    @Autowired
+    private PublicacionService publicacionService;
 
     @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
@@ -109,5 +116,30 @@ public class UsuarioService implements UserDetailsService {
         return usuario.getFavoritos().stream()
                 .map(PublicacionMapper::toResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void eliminarCuenta(String emailUsuario){
+        Usuario usuario = usuarioRepository.findByemail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.getFavoritos().clear();
+        usuarioRepository.save(usuario);
+
+        if(usuario.getReservas() != null && !usuario.getReservas().isEmpty()){
+            reservaRepository.deleteAll(usuario.getReservas());
+        }
+
+        if(usuario.getPublicaciones() != null && !usuario.getPublicaciones().isEmpty()){
+            List<Long> idsPublicaciones = usuario.getPublicaciones().stream()
+                    .map(Publicacion::getId)
+                    .collect(Collectors.toList());
+
+            for(Long idPub : idsPublicaciones){
+                publicacionService.deletePublicacion(idPub, emailUsuario);
+            }
+        }
+
+        usuarioRepository.delete(usuario);
     }
 }
