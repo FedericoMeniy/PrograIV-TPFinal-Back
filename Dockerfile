@@ -13,4 +13,4 @@ COPY --from=build /app/target/*.jar app.jar
 # Exponemos el puerto
 EXPOSE 8080
 # Comando para iniciar Spring Boot
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "--enable-preview", "-jar", "app.jar"]
