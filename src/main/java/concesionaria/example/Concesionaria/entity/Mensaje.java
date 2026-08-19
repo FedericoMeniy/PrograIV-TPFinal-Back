@@ -20,4 +20,6 @@ public class Mensaje {
     private String remitenteEmail;
     private String contenido;
     private LocalDateTime fecha = LocalDateTime.now();
+
+    private boolean leido = false;
 }

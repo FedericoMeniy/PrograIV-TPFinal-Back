@@ -4,6 +4,7 @@ import concesionaria.example.Concesionaria.entity.Publicacion;
 import concesionaria.example.Concesionaria.enums.EstadoPublicacion;
 import concesionaria.example.Concesionaria.enums.TipoPublicacion;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -38,4 +39,12 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
 
     @Query("SELECT a.marca, COUNT(p) FROM Publicacion p JOIN p.auto a WHERE p.estado = concesionaria.example.Concesionaria.enums.EstadoPublicacion.ACEPTADA GROUP BY a.marca ORDER BY COUNT(p) DESC")
     List<Object[]> findTopMarcas();
+
+    @Modifying
+    @Query(value = "DELETE FROM usuario_favoritos WHERE publicacion_id = :publicacion_id", nativeQuery = true)
+    void eliminarDeTodosLosFavoritos(@Param("publicacion_id") Long idPublicacion);
+
+    @Modifying
+    @Query(value = "DELETE FROM reserva WHERE publicacion_id = :publicacion_id", nativeQuery = true)
+    void eliminarReservasDePublicacion(@Param("publicacion_id") Long idPublicacion);
 }
