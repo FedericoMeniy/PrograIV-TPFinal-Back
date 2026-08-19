@@ -278,4 +278,38 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    // Nuevo recuperar cuenta //
+
+    @PostMapping("/olvide-password")
+    public ResponseEntity<?> olvidePassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El email es requerido");
+            }
+            usuarioService.enviarCorreoRecuperacion(email);
+            // Siempre devolvemos OK, exista o no el correo (buena práctica de seguridad para no revelar correos registrados)
+            return ResponseEntity.ok(Map.of("mensaje", "Si el correo está registrado, recibirás las instrucciones."));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("mensaje", "Si el correo está registrado, recibirás las instrucciones."));
+        }
+    }
+
+    @PostMapping("/restablecer-password")
+    public ResponseEntity<?> restablecerPassword(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            String nuevaPassword = request.get("nuevaPassword");
+
+            if (token == null || nuevaPassword == null) {
+                return ResponseEntity.badRequest().body("Faltan datos requeridos.");
+            }
+
+            usuarioService.restablecerPassword(token, nuevaPassword);
+            return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada correctamente."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 }
