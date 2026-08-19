@@ -55,7 +55,16 @@ public class PublicacionMapper {
         dto.setKm(auto.getKm());
         dto.setColor(auto.getColor());
         dto.setFichaTecnica(toFichaTecnicaResponseDTO(auto.getFichaTecnica()));
-        dto.setImagenesUrl(auto.getImagenesUrl());
+
+        if (auto.getImagenesUrl() != null) {
+            List<String> urlsCompletas = auto.getImagenesUrl().stream()
+                    .map(url -> url != null && url.startsWith("http") ? url : "http://localhost:8080" + (url != null && url.startsWith("/") ? "" : "/") + url)
+                    .collect(Collectors.toList());
+            dto.setImagenesUrl(urlsCompletas);
+        } else {
+            dto.setImagenesUrl(List.of());
+        }
+
         return dto;
     }
 

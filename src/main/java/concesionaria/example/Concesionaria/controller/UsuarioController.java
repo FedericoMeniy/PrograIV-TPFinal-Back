@@ -268,4 +268,14 @@ public class UsuarioController {
         List<PublicacionResponseDTO> favoritos = usuarioService.getFavoritos(authentication.getName());
         return ResponseEntity.ok(favoritos);
     }
+
+    @DeleteMapping("/cuenta")
+    public ResponseEntity<?> eliminarFavorito(Authentication authentication){
+        try{
+            usuarioService.eliminarCuenta(authentication.getName());
+            return ResponseEntity.ok(Map.of("mensaje", "Cuenta eliminada correctamente."));
+        }catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 }

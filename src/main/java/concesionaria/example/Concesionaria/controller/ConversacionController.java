@@ -6,6 +6,7 @@ import concesionaria.example.Concesionaria.entity.Mensaje;
 import concesionaria.example.Concesionaria.repository.ConversacionRepository;
 import concesionaria.example.Concesionaria.repository.MensajeRepository;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,11 +33,9 @@ public class ConversacionController {
             @RequestParam String compradorEmail,
             @RequestParam String vendedorEmail) {
 
-        // 1. Buscamos si ya hay una conversación
         Conversacion conversacion = conversacionRepository
                 .findByPublicacionIdAndCompradorEmail(publicacionId, compradorEmail)
                 .orElseGet(() -> {
-                    // Si no existe, la creamos vacía
                     Conversacion nueva = new Conversacion();
                     nueva.setPublicacionId(publicacionId);
                     nueva.setCompradorEmail(compradorEmail);
@@ -44,24 +43,21 @@ public class ConversacionController {
                     return conversacionRepository.save(nueva);
                 });
 
-        // 2. Buscamos el historial de mensajes de esa conversación
         List<Mensaje> historial = mensajeRepository.findByConversacionIdOrderByFechaAsc(conversacion.getId());
 
-        // 3. Armamos la respuesta para Angular
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("conversacionId", conversacion.getId());
         respuesta.put("mensajes", historial);
 
         return ResponseEntity.ok(respuesta);
     }
+
     @GetMapping("/mis-chats")
     public ResponseEntity<List<ConversacionResumenDTO>> obtenerMisChats(@RequestParam String emailUsuario) {
 
-        // 1. Buscamos todas las conversaciones de este usuario
         List<Conversacion> misConversaciones = conversacionRepository
                 .findByCompradorEmailOrVendedorEmail(emailUsuario, emailUsuario);
 
-        // 2. Las transformamos al DTO resumido
         List<ConversacionResumenDTO> resumen = misConversaciones.stream().map(conv -> {
             ConversacionResumenDTO dto = new ConversacionResumenDTO();
             dto.setConversacionId(conv.getId());
@@ -69,7 +65,6 @@ public class ConversacionController {
 
             String emailDelOtro;
 
-            // Determinamos quién es la otra persona
             if (conv.getCompradorEmail().equals(emailUsuario)) {
                 emailDelOtro = conv.getVendedorEmail();
                 dto.setRol("COMPRADOR");
@@ -80,17 +75,14 @@ public class ConversacionController {
 
             dto.setEmailContacto(emailDelOtro);
 
-            // 🔥 Buscamos el nombre del usuario en la base de datos
             usuarioRepository.findByemail(emailDelOtro).ifPresent(usuario -> {
                 dto.setNombreContacto(usuario.getNombre());
             });
 
-            // Si por algún motivo no tiene nombre guardado, mostramos el email como plan B
             if (dto.getNombreContacto() == null || dto.getNombreContacto().isEmpty()) {
                 dto.setNombreContacto(emailDelOtro);
             }
 
-            // Buscamos el último mensaje
             mensajeRepository.findTopByConversacionIdOrderByFechaDesc(conv.getId())
                     .ifPresent(ultimo -> {
                         dto.setUltimoMensaje(ultimo.getContenido());
@@ -100,7 +92,6 @@ public class ConversacionController {
             return dto;
         }).toList();
 
-        // 4. Ordenamos la lista para que los chats con actividad reciente queden arriba
         List<ConversacionResumenDTO> resumenOrdenado = new java.util.ArrayList<>(resumen);
         resumenOrdenado.sort((a, b) -> {
             if (a.getFechaUltimoMensaje() == null) return 1;
@@ -109,5 +100,18 @@ public class ConversacionController {
         });
 
         return ResponseEntity.ok(resumenOrdenado);
+    }
+
+    @GetMapping("/no-leidos")
+    public ResponseEntity<Long> contarNoLeidos(@RequestParam String email) {
+        long cantidad = mensajeRepository.contarMensajesNoLeidos(email);
+        return ResponseEntity.ok(cantidad);
+    }
+
+    @Transactional
+    @PostMapping("/marcar-leidos")
+    public ResponseEntity<?> marcarLeidos(@RequestParam Long conversacionId, @RequestParam String email) {
+        mensajeRepository.marcarComoLeidos(conversacionId, email);
+        return ResponseEntity.ok().build();
     }
 }
