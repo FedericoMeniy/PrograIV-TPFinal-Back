@@ -6,7 +6,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Etapa 2: Ejecución (Java 22 para correr la app)
-FROM eclipse-temurin:22-jdk-slim
+FROM eclipse-temurin:22-jdk
 WORKDIR /app
 # Copiamos el .jar generado en la etapa 1
 COPY --from=build /app/target/*.jar app.jar
