@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers("/usuario/login/google", "/usuario/registro/google").permitAll()
                         .requestMatchers("/usuario/login", "/usuario/registro").permitAll()
                         .requestMatchers("/conversacion/**").authenticated()
+                        // Nuevo recuperar cuenta //
+                        .requestMatchers(HttpMethod.POST, "/usuario/olvide-password", "/usuario/restablecer-password").permitAll()
                         .anyRequest().authenticated()
 
                 )

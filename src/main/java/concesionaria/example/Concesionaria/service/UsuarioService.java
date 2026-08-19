@@ -3,9 +3,11 @@ package concesionaria.example.Concesionaria.service;
 import concesionaria.example.Concesionaria.dto.LoginUsuarioDTO;
 import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.dto.RegistroUsuarioDTO;
+import concesionaria.example.Concesionaria.entity.PasswordResetToken;
 import concesionaria.example.Concesionaria.entity.Publicacion;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.enums.Rol;
+import concesionaria.example.Concesionaria.repository.PasswordResetTokenRepository;
 import concesionaria.example.Concesionaria.repository.PublicacionRepository;
 import concesionaria.example.Concesionaria.repository.ReservaRepository;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
@@ -17,6 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +38,14 @@ public class UsuarioService implements UserDetailsService {
 
     @Autowired
     private PublicacionService publicacionService;
+
+    // Nuevo recuperar cuenta //
+
+    @Autowired
+    private PasswordResetTokenRepository tokenRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
@@ -141,5 +152,55 @@ public class UsuarioService implements UserDetailsService {
         }
 
         usuarioRepository.delete(usuario);
+    }
+
+    // Nuevo recuperar cuenta //
+
+    @Transactional
+    public void enviarCorreoRecuperacion(String email) {
+        Usuario usuario = usuarioRepository.findByemail(email)
+                .orElseThrow(() -> new RuntimeException("Si el correo existe en nuestro sistema, recibirás un enlace de recuperación.")); // Mensaje genérico por seguridad
+
+        // Borramos tokens viejos si el usuario había pedido uno antes y no lo usó
+        tokenRepository.deleteByUsuarioId(usuario.getId());
+
+        // Generamos un token único y aleatorio
+        String token = java.util.UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(token, usuario);
+        tokenRepository.save(resetToken);
+
+        // Armamos el link apuntando a tu Angular
+        String urlRecuperacion = "http://localhost:4200/restablecer-password?token=" + token;
+
+        // Enviamos el correo
+        emailService.sendEmail(
+                usuario.getEmail(),
+                "Recuperar contraseña - MyCar",
+                "Hola " + usuario.getNombre() + ".\n\n" +
+                        "Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva (este enlace expira en 15 minutos):\n\n" +
+                        urlRecuperacion + "\n\n" +
+                        "Si no solicitaste este cambio, ignora este correo."
+        );
+    }
+
+    @Transactional
+    public void restablecerPassword(String token, String nuevaPassword) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("El enlace es inválido o ya fue utilizado."));
+
+        // Verificamos que no esté vencido
+        if (resetToken.getFechaExpiracion().before(new Date())) {
+            tokenRepository.delete(resetToken);
+            throw new RuntimeException("El enlace ha expirado. Por favor, solicita uno nuevo.");
+        }
+
+        Usuario usuario = resetToken.getUsuario();
+
+        // Encriptamos y guardamos la nueva contraseña
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuarioRepository.save(usuario);
+
+        // Borramos el token para que no se pueda volver a usar
+        tokenRepository.delete(resetToken);
     }
 }
