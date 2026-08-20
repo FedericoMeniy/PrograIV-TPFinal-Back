@@ -21,9 +21,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer { // <-
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // La URL de conexión inicial (punto de entrada). Permitimos CORS para Angular.
+        // La URL de conexión inicial (punto de entrada). Permitimos CORS para Angular y Vercel.
         registry.addEndpoint("/ws-chat")
-                .setAllowedOrigins("http://localhost:4200")
+                .setAllowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*", "https://my-car-tesis-front-rouge.vercel.app")
                 .withSockJS();
     }
 }
