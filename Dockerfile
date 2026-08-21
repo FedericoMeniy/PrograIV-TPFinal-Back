@@ -12,5 +12,5 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 # Exponemos el puerto
 EXPOSE 8080
-# Comando para iniciar Spring Boot
-ENTRYPOINT ["java", "--enable-preview", "-jar", "app.jar"]
+# Comando para iniciar Spring Boot (CON LÍMITE DE MEMORIA)
+ENTRYPOINT ["java", "-Xmx300m", "-Xms300m", "--enable-preview", "-jar", "app.jar"]
