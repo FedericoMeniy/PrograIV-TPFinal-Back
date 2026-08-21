@@ -89,6 +89,10 @@ public class ConversacionController {
                         dto.setFechaUltimoMensaje(ultimo.getFecha());
                     });
 
+            // Contar mensajes no leidos para este chat
+            long noLeidos = mensajeRepository.contarNoLeidosPorConversacion(conv.getId(), emailUsuario);
+            dto.setCantidadNoLeidos((int) noLeidos);
+
             return dto;
         }).toList();
 

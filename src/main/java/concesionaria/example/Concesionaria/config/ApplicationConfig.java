@@ -35,26 +35,26 @@ public class ApplicationConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+            return config.getAuthenticationManager();
+        }
 
-    @Bean
-    public UserDetailsService userDetailsService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
-        // CORRECCIÓN: Creamos e inicializamos el UsuarioService con sus dependencias
-        // Nota: Si el constructor de UsuarioService no usa el passwordEncoder, se puede omitir aquí.
-        // Asumiendo que sí lo usa:
-        return new UsuarioService(usuarioRepository, passwordEncoder);
-    }
+        @Bean
+        public UserDetailsService userDetailsService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+            // CORRECCIÓN: Creamos e inicializamos el UsuarioService con sus dependencias
+            // Nota: Si el constructor de UsuarioService no usa el passwordEncoder, se puede omitir aquí.
+            // Asumiendo que sí lo usa:
+            return new UsuarioService(usuarioRepository, passwordEncoder);
+        }
 
-    // 2. Define el AuthenticationProvider
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService); // Usa el UserDetailsService creado
-        authProvider.setPasswordEncoder(passwordEncoder);       // Usa el PasswordEncoder
-        return authProvider;
-    }
+        // 2. Define el AuthenticationProvider
+        @Bean
+        public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+            DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+            authProvider.setUserDetailsService(userDetailsService); // Usa el UserDetailsService creado
+            authProvider.setPasswordEncoder(passwordEncoder);       // Usa el PasswordEncoder
+            return authProvider;
+        }
 
 }

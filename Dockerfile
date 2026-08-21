@@ -6,11 +6,11 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Etapa 2: Ejecución (Java 22 para correr la app)
-FROM eclipse-temurin:22-jdk-slim
+FROM eclipse-temurin:22-jdk
 WORKDIR /app
 # Copiamos el .jar generado en la etapa 1
 COPY --from=build /app/target/*.jar app.jar
 # Exponemos el puerto
 EXPOSE 8080
-# Comando para iniciar Spring Boot
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando para iniciar Spring Boot (CON LÍMITE DE MEMORIA)
+ENTRYPOINT ["java", "-Xmx300m", "-Xms300m", "--enable-preview", "-jar", "app.jar"]

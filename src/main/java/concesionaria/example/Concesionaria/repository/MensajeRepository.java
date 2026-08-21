@@ -25,9 +25,11 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
             "AND m.remitenteEmail != :email AND m.leido = false")
     long contarMensajesNoLeidos(@Param("email") String email);
 
+    @Query("SELECT COUNT(m) FROM Mensaje m WHERE m.conversacionId = :conversacionId " +
+            "AND m.remitenteEmail != :email AND m.leido = false")
+    long contarNoLeidosPorConversacion(@Param("conversacionId") Long conversacionId, @Param("email") String email);
+
     @Modifying
     @Query("UPDATE Mensaje m SET m.leido = true WHERE m.conversacionId = :conversacionId AND m.remitenteEmail != :email")
     void marcarComoLeidos(@Param("conversacionId") Long conversacionId, @Param("email") String email);
-
-
 }
