@@ -34,13 +34,24 @@ public class ImageStorageService {
             }
 
             String originalFilename = file.getOriginalFilename();
-            String resourceType = "image";
+            String resourceType = "";
+
             if (originalFilename != null) {
                 String lower = originalFilename.toLowerCase();
+
                 if (lower.endsWith(".mp4") || lower.endsWith(".mov") ||
                     lower.endsWith(".avi") || lower.endsWith(".webm")) {
                     resourceType = "video";
                 }
+                else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+                        lower.endsWith(".png") || lower.endsWith(".webp")) {
+                    resourceType = "image";
+                }
+                else {
+                    throw new RuntimeException("Formato no soportado. Subí una foto (.jpg, .jpeg, .png y .webp) o un video (.mp4, .mov, .avi y .webm).");
+                }
+            }else {
+                throw new RuntimeException("El archivo no tiene un nombre válido.");
             }
 
             @SuppressWarnings("unchecked")
