@@ -15,6 +15,7 @@ import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -99,6 +100,24 @@ public class ReservaService {
         );
 
         return pagoURL;
+    }
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void limpiarReservasVencidas() {
+        // Calculamos exactamente qué hora era hace 10 minutos
+        LocalDateTime limite = LocalDateTime.now().minusMinutes(2);
+
+        // Buscamos en la base de datos las reservas PENDIENTES que nacieron antes de esa hora
+        List<Reserva> reservasVencidas = reservaRepository.findByEstadoAndFechaBefore(
+                EstadoReserva.PENDIENTE, limite
+        );
+
+        // Si encuentra alguna, la cancela y libera el auto
+        for (Reserva reserva : reservasVencidas) {
+            reserva.setEstado(EstadoReserva.CANCELADA);
+            reservaRepository.save(reserva);
+            System.out.println("El tiempo expiró. Reserva ID " + reserva.getId() + " cancelada automáticamente.");
+        }
     }
 
     public List<ReservaResponseDTO> obtenerReservasPorUsuario(Long idUsuario){

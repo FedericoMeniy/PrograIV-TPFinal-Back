@@ -5,6 +5,7 @@ import concesionaria.example.Concesionaria.enums.EstadoReserva;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,5 @@ public interface ReservaRepository extends JpaRepository <Reserva,Long> {
     // Antes era: Optional<Reserva> findByPublicacionIdAndEstado(...)
     // AHORA TIENE QUE SER ASÍ:
     List<Reserva> findByPublicacionIdAndEstado(Long publicacionId, EstadoReserva estado);
+    List<Reserva> findByEstadoAndFechaBefore(EstadoReserva estado, LocalDateTime fecha);
 }

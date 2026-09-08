@@ -48,13 +48,13 @@ public class MercadoPagoService {
 
             // 2) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success(frontendURL + "/pago-exitoso")
-                    .failure(frontendURL + "/pago-fallido")
-                    .pending(frontendURL + "/pago-pendiente")
+                    .success(frontendURL + "pago-exitoso")
+                    .failure(frontendURL + "pago-fallido")
+                    .pending(frontendURL + "pago-pendiente")
                     .build();
 
             // 3) Webhook
-            String notificacionURL = backendURL + "/notificacion/mercadopago?reserva_id=" + reservaId;
+            String notificacionURL = backendURL + "notificacion/mercadopago?reserva_id=" + reservaId;
 
             // 4) Preference Request
             List<PreferenceItemRequest> items = new ArrayList<>();

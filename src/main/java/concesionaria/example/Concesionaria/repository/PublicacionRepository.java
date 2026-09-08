@@ -31,11 +31,13 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
             "LEFT JOIN FETCH a.fichaTecnica f " +
             "WHERE p.estado = :estadoPub " +
             "AND p.tipoPublicacion = :tipoPub " +
-            "AND NOT EXISTS (SELECT r FROM Reserva r WHERE r.publicacion = p AND r.estado = concesionaria.example.Concesionaria.enums.EstadoReserva.ACEPTADA)")
+            "AND NOT EXISTS (SELECT r FROM Reserva r WHERE r.publicacion = p AND r.estado IN (concesionaria.example.Concesionaria.enums.EstadoReserva.ACEPTADA, concesionaria.example.Concesionaria.enums.EstadoReserva.PENDIENTE))")
     List<Publicacion> findPublicacionesDisponibles(
             @Param("estadoPub") EstadoPublicacion estadoPub,
             @Param("tipoPub") TipoPublicacion tipoPub
     );
+
+
 
     @Query("SELECT a.marca, COUNT(p) FROM Publicacion p JOIN p.auto a WHERE p.estado = concesionaria.example.Concesionaria.enums.EstadoPublicacion.ACEPTADA GROUP BY a.marca ORDER BY COUNT(p) DESC")
     List<Object[]> findTopMarcas();
