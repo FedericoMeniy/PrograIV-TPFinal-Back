@@ -32,6 +32,7 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final MercadoPagoService mercadoPagoService;
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
     @Transactional
     public String iniciarReserva(ReservaRequestDTO reservaRequestDTO) {
@@ -91,6 +92,15 @@ public class ReservaService {
         }
 
         Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
+
+
+        String asuntoPendiente = "Tu reserva está pendiente de pago - MyCar";
+        String mensajePendiente = "Hola " + usuarioExistente.getNombre() + ",\n\n" +
+                "Iniciaste el proceso de reserva para el vehículo " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo() + ".\n" +
+                "El estado actual es PENDIENTE. Recordá que tenés 10 minutos para completar el pago de $" + nuevaReserva.getMontoReserva() + " y asegurar el vehículo.\n\n" +
+                "Saludos, el equipo de MyCar.";
+
+        emailService.sendEmail(usuarioExistente.getEmail(), asuntoPendiente, mensajePendiente);
 
         // 4. MERCADO PAGO
         String pagoURL = mercadoPagoService.crearPreferenciaDePago(
@@ -205,6 +215,8 @@ public class ReservaService {
         Reserva reserva = reservaRepository.findById(reservaDTO.getId())
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
+        EstadoReserva estadoAnterior = reserva.getEstado();
+
         // Solo actualiza si el campo viene en el DTO
         if (reservaDTO.getFecha() != null) {
             reserva.setFecha(reservaDTO.getFecha());
@@ -241,6 +253,26 @@ public class ReservaService {
 
         reserva.setUsuario(usuario);
         reservaRepository.save(reserva);
+
+        // 2. MAGIA ACÁ: Si el estado nuevo es distinto al anterior, disparamos el email
+        if (reservaDTO.getEstadoReserva() != null && !estadoAnterior.equals(reservaDTO.getEstadoReserva())) {
+            String nombreAuto = reserva.getPublicacion().getAuto().getMarca() + " " + reserva.getPublicacion().getAuto().getModelo();
+            String asunto = "";
+            String msjAdmin = "";
+
+            if (reservaDTO.getEstadoReserva() == EstadoReserva.ACEPTADA) {
+                asunto = "Reserva Aceptada - MyCar";
+                msjAdmin = "Hola " + usuario.getNombre() + ",\n\n¡Buenas noticias! Un administrador ha ACEPTADO tu reserva para el vehículo " + nombreAuto + ".\nNos pondremos en contacto pronto para continuar con el proceso.";
+            } else if (reservaDTO.getEstadoReserva() == EstadoReserva.CANCELADA) {
+                asunto = "Reserva Cancelada - MyCar";
+                msjAdmin = "Hola " + usuario.getNombre() + ",\n\nTe informamos que un administrador ha CANCELADO tu reserva para el vehículo " + nombreAuto + ".\nAnte cualquier duda, por favor contactate con nosotros.";
+            }
+
+            // Si hay un mensaje preparado, lo enviamos (asegurate de tener inyectado emailService en esta clase)
+            if (!asunto.isEmpty()) {
+                emailService.sendEmail(usuario.getEmail(), asunto, msjAdmin);
+            }
+        }
 
         return entityReservaToReservaDTO(reserva);
     }
