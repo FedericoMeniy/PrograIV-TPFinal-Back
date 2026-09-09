@@ -27,6 +27,6 @@ public class PasswordResetToken {
     public PasswordResetToken(String token, Usuario usuario) {
         this.token = token;
         this.usuario = usuario;
-        this.fechaExpiracion = new Date(System.currentTimeMillis() + 900000); //Token expira en 15 minutos.
+        this.fechaExpiracion = new Date(System.currentTimeMillis() + 900000);
     }
 }

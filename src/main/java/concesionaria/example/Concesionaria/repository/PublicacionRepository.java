@@ -37,8 +37,6 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
             @Param("tipoPub") TipoPublicacion tipoPub
     );
 
-
-
     @Query("SELECT a.marca, COUNT(p) FROM Publicacion p JOIN p.auto a WHERE p.estado = concesionaria.example.Concesionaria.enums.EstadoPublicacion.ACEPTADA GROUP BY a.marca ORDER BY COUNT(p) DESC")
     List<Object[]> findTopMarcas();
 

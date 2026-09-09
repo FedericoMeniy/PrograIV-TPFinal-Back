@@ -1,38 +1,34 @@
 package concesionaria.example.Concesionaria.controller;
 
- // Importar
 import concesionaria.example.Concesionaria.dto.*;
 import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import concesionaria.example.Concesionaria.service.GoogleTokenVerifierService;
-import concesionaria.example.Concesionaria.service.JwtService; // Importar
+import concesionaria.example.Concesionaria.service.JwtService;
 import concesionaria.example.Concesionaria.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager; // Importar
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken; // Importar
-import org.springframework.security.core.Authentication; // Importar
-import org.springframework.security.core.AuthenticationException; // Importar
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/usuario")
 public class UsuarioController {
 
     private UsuarioService usuarioService;
-    private final AuthenticationManager authenticationManager; // Inyectar
+    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private UsuarioRepository usuarioRepository;
     private final GoogleTokenVerifierService googleTokenVerifierService;
 
-    @Autowired // Spring usará este constructor para inyectar todas las dependencias
+    @Autowired
     public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService, UsuarioRepository usuarioRepository, GoogleTokenVerifierService googleTokenVerifierService) {
         this.usuarioService = usuarioService;
         this.authenticationManager = authenticationManager;
@@ -43,13 +39,10 @@ public class UsuarioController {
 
     @PostMapping("/registro")
     public ResponseEntity<?> registrarUsuario(@Valid @RequestBody RegistroUsuarioDTO registroUsuarioDto){
-
         try{
             Usuario usuarioRegistrado = usuarioService.registrarUsuario(registroUsuarioDto);
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioRegistrado);
-
         }catch (RuntimeException e){
-
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
@@ -57,21 +50,16 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginUsuarioDTO loginDto) {
         try {
-            // 1. Autenticar credenciales con AuthenticationManager
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
             );
 
-            // 2. Obtener el UserDetails (que es el Usuario)
             Usuario usuarioLogueado = (Usuario) authentication.getPrincipal();
 
-            // 3. Generar el JWT
             String token = jwtService.generateToken(usuarioLogueado);
 
-            // 4. Obtener el objeto Usuario sin el password (o solo los datos a devolver)
             Usuario usuarioResponse = usuarioRepository.findByemail(usuarioLogueado.getEmail()).orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
 
-            // 5. Devolver la respuesta con el token y datos del usuario
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
                     .token(token)
                     .id(usuarioResponse.getId())
@@ -84,10 +72,8 @@ public class UsuarioController {
             return ResponseEntity.ok(jwtResponse);
 
         } catch (AuthenticationException e) {
-            // Si las credenciales son incorrectas
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email o contraseña incorrecta.");
         } catch (RuntimeException e) {
-            // Manejo de errores genéricos (e.g., usuario no encontrado, aunque AuthenticationException debería cubrirlo)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
@@ -105,7 +91,6 @@ public class UsuarioController {
 
             String nuevoToken = jwtService.generateToken(usuarioActualizado);
 
-            // 3. Devolvemos el DTO completo con el nuevo token, igual que hacemos en el Login
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
                     .token(nuevoToken)
                     .id(usuarioActualizado.getId())
@@ -129,19 +114,15 @@ public class UsuarioController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El token de Google es requerido");
             }
 
-            // Verificar el token de Google
             Map<String, Object> payload = googleTokenVerifierService.verifyToken(idToken);
             String email = (String) payload.get("email");
             String nombre = (String) payload.get("name");
 
-            // Buscar usuario por email
             Usuario usuario = usuarioRepository.findByemail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado. Por favor regístrate primero."));
 
-            // Generar token JWT
             String token = jwtService.generateToken(usuario);
 
-            // Crear respuesta
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
                     .token(token)
                     .id(usuario.getId())
@@ -172,12 +153,10 @@ public class UsuarioController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El token de Google es requerido");
             }
 
-            // Verificar el token de Google
             Map<String, Object> payload = googleTokenVerifierService.verifyToken(idToken);
             String email = (String) payload.get("email");
             String nombre = (String) payload.get("name");
 
-            // Verificar si el usuario ya existe
             if (usuarioRepository.findByemail(email).isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body("El usuario ya está registrado. Por favor inicia sesión.");
@@ -185,31 +164,22 @@ public class UsuarioController {
 
             String password = java.util.UUID.randomUUID().toString();
 
-            // Crear nuevo usuario SIN establecer el rol
-            // El servicio UsuarioService debe establecer el rol como "USER" automáticamente
             RegistroUsuarioDTO registroDto = new RegistroUsuarioDTO();
             registroDto.setNombre(capitalize(nombre != null ? nombre : email.split("@")[0]));
             registroDto.setEmail(email);
             registroDto.setTelefono(null);
             registroDto.setPassword(password);
 
-            // IMPORTANTE: NO establecer rol aquí
-            // El servicio UsuarioService debe ignorar cualquier rol que venga en el DTO
-            // y siempre establecer "USER" por defecto
-
-            // Registrar usuario - el servicio establecerá el rol como "USER"
             Usuario usuarioRegistrado = usuarioService.registrarUsuario(registroDto);
 
-            // Generar token JWT
             String token = jwtService.generateToken(usuarioRegistrado);
 
-            // Crear respuesta
             JwtResponseDTO jwtResponse = JwtResponseDTO.builder()
                     .token(token)
                     .id(usuarioRegistrado.getId())
                     .nombre(usuarioRegistrado.getNombre())
                     .email(usuarioRegistrado.getEmail())
-                    .rol(usuarioRegistrado.getRol()) // Será "USER" siempre
+                    .rol(usuarioRegistrado.getRol())
                     .telefono(usuarioRegistrado.getTelefono())
                     .build();
 
@@ -227,7 +197,6 @@ public class UsuarioController {
         }
     }
 
-    // --- HELPER ---
     private String capitalize(String text) {
         if (text == null || text.isBlank()) return text;
         String[] words = text.trim().split("\\s+");
@@ -279,8 +248,6 @@ public class UsuarioController {
         }
     }
 
-    // Nuevo recuperar cuenta //
-
     @PostMapping("/olvide-password")
     public ResponseEntity<?> olvidePassword(@RequestBody Map<String, String> request) {
         try {
@@ -289,7 +256,6 @@ public class UsuarioController {
                 return ResponseEntity.badRequest().body("El email es requerido");
             }
             usuarioService.enviarCorreoRecuperacion(email);
-            // Siempre devolvemos OK, exista o no el correo (buena práctica de seguridad para no revelar correos registrados)
             return ResponseEntity.ok(Map.of("mensaje", "Si el correo está registrado, recibirás las instrucciones."));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("mensaje", "Si el correo está registrado, recibirás las instrucciones."));
@@ -305,7 +271,6 @@ public class UsuarioController {
             if (token == null || nuevaPassword == null) {
                 return ResponseEntity.badRequest().body("Faltan datos requeridos.");
             }
-
             usuarioService.restablecerPassword(token, nuevaPassword);
             return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada correctamente."));
         } catch (RuntimeException e) {

@@ -1,7 +1,6 @@
 package concesionaria.example.Concesionaria.dto;
 
 import lombok.Data;
-
 import java.util.List;
 
 @Data

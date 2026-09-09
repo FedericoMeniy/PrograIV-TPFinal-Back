@@ -6,9 +6,8 @@ import lombok.Data;
 
 @Data
 public class UsuarioReservaDTO {
-
-
     private String nombre;
+
     @NotBlank(message = "El mail es obligatorio")
     @Email
     private String email;

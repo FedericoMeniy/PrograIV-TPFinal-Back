@@ -17,11 +17,9 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +41,6 @@ public class ReservaService {
         Usuario usuarioExistente = usuarioRepository.findByemail(usuarioDTO.getEmail())
                 .orElseThrow(() -> new RuntimeException("El usuario no existe"));
 
-        // 1. CANDADO: ¿Ya está vendida?
         List<Reserva> reservasPagadas = reservaRepository.findByPublicacionIdAndEstado(
                 publicacion.getId(), EstadoReserva.ACEPTADA);
 
@@ -51,37 +48,30 @@ public class ReservaService {
             throw new RuntimeException("Este vehículo ya fue reservado exitosamente y no admite nuevos pagos.");
         }
 
-        // 2. BUSCAMOS TODAS LAS RESERVAS PENDIENTES DE ESTE AUTO
         List<Reserva> reservasPendientes = reservaRepository.findByPublicacionIdAndEstado(
                 publicacion.getId(), EstadoReserva.PENDIENTE);
 
         Reserva nuevaReserva = null;
 
-        // Recorremos las reservas pendientes
         for (Reserva existente : reservasPendientes) {
 
-            // Si la reserva pendiente es de este MISMO usuario
             if (existente.getUsuario().getId().equals(usuarioExistente.getId())) {
-                nuevaReserva = existente; // La reutilizamos
-                nuevaReserva.setFecha(LocalDateTime.now()); // Le renovamos el tiempo
-                break; // Cortamos el ciclo for, ya encontramos la nuestra
+                nuevaReserva = existente;
+                nuevaReserva.setFecha(LocalDateTime.now());
+                break;
             } else {
-                // Si la reserva es de OTRO usuario, revisamos si ya pasaron sus 10 minutos
                 long minutosTranscurridos = java.time.temporal.ChronoUnit.MINUTES.between(existente.getFecha(), LocalDateTime.now());
 
                 if (minutosTranscurridos > 10) {
-                    // Se le acabó el tiempo al otro, se la cancelamos
                     existente.setEstado(EstadoReserva.CANCELADA);
                     reservaRepository.save(existente);
                 } else {
-                    // Todavía está dentro de los 10 minutos de gracia del otro. Bloqueamos al usuario actual.
                     long minutosRestantes = 10 - minutosTranscurridos;
                     throw new RuntimeException("El vehículo está siendo reservado por otro cliente. Por favor, intentá de nuevo en " + minutosRestantes + " minutos.");
                 }
             }
         }
 
-        // 3. SI NO ENCONTRAMOS NINGUNA RESERVA NUESTRA PARA REUTILIZAR, CREAMOS UNA DE CERO
         if (nuevaReserva == null) {
             nuevaReserva = new Reserva();
             nuevaReserva.setUsuario(usuarioExistente);
@@ -93,7 +83,6 @@ public class ReservaService {
 
         Reserva reservaPreGuardada = reservaRepository.save(nuevaReserva);
 
-
         String asuntoPendiente = "Tu reserva está pendiente de pago - MyCar";
         String mensajePendiente = "Hola " + usuarioExistente.getNombre() + ",\n\n" +
                 "Iniciaste el proceso de reserva para el vehículo " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo() + ".\n" +
@@ -102,7 +91,6 @@ public class ReservaService {
 
         emailService.sendEmail(usuarioExistente.getEmail(), asuntoPendiente, mensajePendiente);
 
-        // 4. MERCADO PAGO
         String pagoURL = mercadoPagoService.crearPreferenciaDePago(
                 reservaPreGuardada.getPublicacion(),
                 reservaPreGuardada.getId(),
@@ -111,18 +99,16 @@ public class ReservaService {
 
         return pagoURL;
     }
+
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void limpiarReservasVencidas() {
-        // Calculamos exactamente qué hora era hace 10 minutos
         LocalDateTime limite = LocalDateTime.now().minusMinutes(2);
 
-        // Buscamos en la base de datos las reservas PENDIENTES que nacieron antes de esa hora
         List<Reserva> reservasVencidas = reservaRepository.findByEstadoAndFechaBefore(
                 EstadoReserva.PENDIENTE, limite
         );
 
-        // Si encuentra alguna, la cancela y libera el auto
         for (Reserva reserva : reservasVencidas) {
             reserva.setEstado(EstadoReserva.CANCELADA);
             reservaRepository.save(reserva);
@@ -131,7 +117,6 @@ public class ReservaService {
     }
 
     public List<ReservaResponseDTO> obtenerReservasPorUsuario(Long idUsuario){
-
         List<Reserva> reservasUsuario = reservaRepository.findByUsuarioId(idUsuario);
         List<ReservaResponseDTO> reservasUsuarioDTO = new ArrayList<>();
 
@@ -144,7 +129,6 @@ public class ReservaService {
     }
 
     public ReservaResponseDTO entityReservaToReservaDTO(Reserva reserva){
-
         ReservaResponseDTO reservaResponseDTO = new ReservaResponseDTO();
         UsuarioReservaDTO usuarioReservaDTO = new UsuarioReservaDTO();
         Usuario usuario = reserva.getUsuario();
@@ -177,13 +161,11 @@ public class ReservaService {
         }
 
         try {
-            // 1. Obtener los detalles del pago desde la API de Mercado Pago
             Payment payment = mercadoPagoService.obtenerDetallesDePago(paymentId);
             String estadoMP = payment.getStatus().toString();
 
             System.out.println("Pago ID: " + paymentId + " - Estado de MP: " + estadoMP);
 
-            // 2. Actualizar el estado de la Reserva en la base de datos
             if ("approved".equalsIgnoreCase(estadoMP)) {
                 reserva.setEstado(EstadoReserva.ACEPTADA);
                 reserva.setPaymentId(paymentId);
@@ -209,6 +191,7 @@ public class ReservaService {
                 .map(this::entityReservaToReservaDTO)
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public ReservaResponseDTO modificarReserva(ReservaResponseDTO reservaDTO) {
 
@@ -217,7 +200,6 @@ public class ReservaService {
 
         EstadoReserva estadoAnterior = reserva.getEstado();
 
-        // Solo actualiza si el campo viene en el DTO
         if (reservaDTO.getFecha() != null) {
             reserva.setFecha(reservaDTO.getFecha());
         }
@@ -230,14 +212,12 @@ public class ReservaService {
             reserva.setEstado(reservaDTO.getEstadoReserva());
         }
 
-        // Modificación de la publicación (ahora sacamos el ID del objeto anidado)
         if (reservaDTO.getPublicacion() != null && reservaDTO.getPublicacion().getId() != null) {
             Publicacion publicacion = publicacionRepository.findById(reservaDTO.getPublicacion().getId())
                     .orElseThrow(() -> new RuntimeException("Publicación no encontrada"));
             reserva.setPublicacion(publicacion);
         }
 
-        // Actualización de los datos del usuario sin crear uno nuevo
         Usuario usuario = reserva.getUsuario();
         if (reservaDTO.getUsuarioReserva() != null) {
             if (reservaDTO.getUsuarioReserva().getEmail() != null) {
@@ -254,7 +234,6 @@ public class ReservaService {
         reserva.setUsuario(usuario);
         reservaRepository.save(reserva);
 
-        // 2. MAGIA ACÁ: Si el estado nuevo es distinto al anterior, disparamos el email
         if (reservaDTO.getEstadoReserva() != null && !estadoAnterior.equals(reservaDTO.getEstadoReserva())) {
             String nombreAuto = reserva.getPublicacion().getAuto().getMarca() + " " + reserva.getPublicacion().getAuto().getModelo();
             String asunto = "";
@@ -268,7 +247,6 @@ public class ReservaService {
                 msjAdmin = "Hola " + usuario.getNombre() + ",\n\nTe informamos que un administrador ha CANCELADO tu reserva para el vehículo " + nombreAuto + ".\nAnte cualquier duda, por favor contactate con nosotros.";
             }
 
-            // Si hay un mensaje preparado, lo enviamos (asegurate de tener inyectado emailService en esta clase)
             if (!asunto.isEmpty()) {
                 emailService.sendEmail(usuario.getEmail(), asunto, msjAdmin);
             }

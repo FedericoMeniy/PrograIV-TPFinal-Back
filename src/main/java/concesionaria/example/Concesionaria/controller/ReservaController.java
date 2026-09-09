@@ -6,13 +6,11 @@ import concesionaria.example.Concesionaria.entity.Usuario;
 import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import concesionaria.example.Concesionaria.service.ReservaService;
 import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -24,7 +22,6 @@ public class ReservaController {
 
     @PostMapping("/crear")
     public ResponseEntity<?> iniciarReserva(@Valid@RequestBody ReservaRequestDTO reservaRequestDTO){
-
         try{
             String redireccionURL = reservaService.iniciarReserva(reservaRequestDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(redireccionURL);
@@ -33,13 +30,13 @@ public class ReservaController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
+
     @PostMapping("/webhook/{reservaId}")
     public ResponseEntity<?> recibirNotificacionDePago(
             @PathVariable Long reservaId,
             @RequestParam(name = "data.id", required = false) String paymentId,
             @RequestParam(name = "type", required = false) String type) {
 
-        // Mercado Pago a veces manda avisos de otro tipo, solo nos importan los "payment"
         if ("payment".equals(type) && paymentId != null) {
 
             // Llamamos a ese método que habías dejado preparado en el Service
@@ -47,22 +44,17 @@ public class ReservaController {
 
         }
 
-        // ¡MUY IMPORTANTE! Siempre hay que responderle 200 OK a Mercado Pago
-        // rápido, sino piensa que tu servidor está caído y te manda la notificación mil veces.
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/mis-reservas")
     public ResponseEntity<List<ReservaResponseDTO>> obtenerMisReservas(Authentication authentication){
         try {
-            // 1. Obtener el email del usuario autenticado
             String emailUsuario = authentication.getName(); //
 
-            // 2. Obtener el ID del usuario a partir del email
             Usuario usuario = usuarioRepository.findByemail(emailUsuario).orElseThrow(() -> new RuntimeException("Usuario no encontrado."));; //
             Long idUsuario = usuario.getId(); //
 
-            // 3. Obtener las reservas usando el ID del usuario
             List<ReservaResponseDTO> reservas = reservaService.obtenerReservasPorUsuario(idUsuario);
 
             return ResponseEntity.ok(reservas);
@@ -85,11 +77,12 @@ public class ReservaController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarReserva(@PathVariable Long id) {
         try {
             reservaService.eliminarReserva(id);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }

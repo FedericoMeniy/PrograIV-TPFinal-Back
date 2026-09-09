@@ -6,7 +6,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -19,7 +18,6 @@ public class GoogleTokenVerifierService {
 
     public GoogleTokenVerifierService(@Value("${spring.security.oauth2.client.registration.google.client-id}") String googleClientId) {
         this.googleClientId = googleClientId;
-        // Usar GsonFactory en lugar de JacksonFactory (más moderno)
         this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(Collections.singletonList(googleClientId))
                 .build();

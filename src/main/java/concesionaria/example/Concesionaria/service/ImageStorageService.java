@@ -5,13 +5,11 @@ import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Map;
 
 @Service
 public class ImageStorageService {
-
     private final Cloudinary cloudinary;
 
     public ImageStorageService(
@@ -60,7 +58,6 @@ public class ImageStorageService {
                     ObjectUtils.asMap("resource_type", resourceType)
             );
 
-            // Devuelve la URL publica de Cloudinary (accesible desde cualquier PC)
             return (String) result.get("secure_url");
 
         } catch (IOException e) {

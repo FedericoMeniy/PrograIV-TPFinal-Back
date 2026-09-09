@@ -18,8 +18,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/publicacion")
 public class PublicacionController {
+
     @Autowired
     private PublicacionService publicacionService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -46,13 +48,14 @@ public class PublicacionController {
 
     @PostMapping("/crearPublicacion")
     public PublicacionResponseDTO postPublicacion(
-            @RequestParam("publicacion") String publicacionDtoString, // El DTO como String
-            @RequestParam(value = "files", required = false) List<MultipartFile> files, // Los archivos
+            @RequestParam("publicacion") String publicacionDtoString,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files,
             Authentication authentication) {
 
         String emailVendedor = authentication.getName();
 
         PublicacionRequestDTO publicacionDTO;
+
         try {
             publicacionDTO = objectMapper.readValue(publicacionDtoString, PublicacionRequestDTO.class);
         } catch (Exception e) {
@@ -79,29 +82,23 @@ public class PublicacionController {
         return ResponseEntity.ok(response);
     }
 
-    // Lo que dice corregido lo cambie yo para poder hacer las funcionalidades del admin en el front
-    //Fede 12/11 21:04
-    // [CORREGIDO] Ruta /admin/pendientes para que coincida con SecurityConfig
     @GetMapping("/admin/pendientes")
     public List<PublicacionResponseDTO> getPublicacionesPendientes(){
         return publicacionService.getPublicacionesPendientes();
     }
 
-    // [CORREGIDO] Ruta /admin/aprobar/{id} para que coincida con SecurityConfig
     @PatchMapping("/admin/aprobar/{id}")
     public PublicacionResponseDTO aprobarPublicacion(@PathVariable Long id) {
         return publicacionService.aprobarPublicacion(id);
     }
 
-    // [CORREGIDO] Ruta /admin/rechazar/{id} para que coincida con SecurityConfig
-    @DeleteMapping("/admin/rechazar/{id}") // Cambiado de PatchMapping a DeleteMapping para coincidir con la acción de "eliminar/rechazar"
+    @DeleteMapping("/admin/rechazar/{id}")
     public ResponseEntity<?> rechazarPublicacion(@PathVariable Long id){
         publicacionService.rechazarPublicacion(id);
         Map<String, String> response = Map.of("mensaje", "Publicación rechazada y eliminada correctamente");
         return ResponseEntity.ok(response);
     }
 
-    // Nuevo endpoint para que el usuario marque como vendida su publicación (que resulta en eliminación)
     @PatchMapping("/vendida/{id}")
     public ResponseEntity<?> marcarComoVendidaYEliminar(@PathVariable Long id, Authentication authentication){
         String emailVendedor = authentication.getName();

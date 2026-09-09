@@ -14,9 +14,8 @@ public class ChatController {
     @Autowired
     private MensajeRepository mensajeRepository;
 
-    // Angular manda a "/app/chat/{conversacionId}"
     @MessageMapping("/chat/{conversacionId}")
-    @SendTo("/topic/chat/{conversacionId}") // Se reenvía a la sala privada
+    @SendTo("/topic/chat/{conversacionId}")
     public Mensaje enviarMensajePrivado(@DestinationVariable Long conversacionId, Mensaje mensaje) {
         mensaje.setConversacionId(conversacionId);
         return mensajeRepository.save(mensaje);
