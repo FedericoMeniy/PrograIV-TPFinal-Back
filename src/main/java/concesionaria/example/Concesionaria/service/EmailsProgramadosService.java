@@ -5,19 +5,16 @@ import concesionaria.example.Concesionaria.repository.UsuarioRepository;
 import lombok.Data;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
 @Data
 public class EmailsProgramadosService {
-
     private final EmailService emailService;
     private final UsuarioRepository usuarioRepository;
 
     @Scheduled(cron = "0 30 12 ? * FRI")
     public void mailFinanciacion(){
-
         List<Usuario> usuarios = usuarioRepository.findAll();
 
         String asunto = "Mycar financiaciones";

@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +88,6 @@ public class ConversacionController {
                         dto.setFechaUltimoMensaje(ultimo.getFecha());
                     });
 
-            // Contar mensajes no leidos para este chat
             long noLeidos = mensajeRepository.contarNoLeidosPorConversacion(conv.getId(), emailUsuario);
             dto.setCantidadNoLeidos((int) noLeidos);
 

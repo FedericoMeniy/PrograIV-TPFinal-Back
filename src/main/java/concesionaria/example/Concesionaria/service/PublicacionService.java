@@ -13,15 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PublicacionService {
-
-    // Inyectado a través de @RequiredArgsConstructor (o @Autowired si quitas final)
     private final PublicacionRepository publicacionRepository;
     private final UsuarioRepository usuarioRepository;
     private final AutoRepository autoRepository;
@@ -29,7 +26,6 @@ public class PublicacionService {
     private final EmailService emailService;
     private final ReservaRepository reservaRepository;
 
-    // Inyectado explícitamente (Asegúrate que ImageStorageService esté anotado con @Service)
     @Autowired
     private ImageStorageService imageStorageService;
 
@@ -56,10 +52,8 @@ public class PublicacionService {
 
     @Transactional
     public PublicacionResponseDTO postPublicacion(PublicacionRequestDTO dto, List<MultipartFile> files, String emailVendedor){
-        // 1. Encontrar al usuario vendedor
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        // 2. Guardar las imágenes y obtener sus URLs
         List<String> imageUrls = new ArrayList<>();
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
@@ -70,7 +64,6 @@ public class PublicacionService {
             }
         }
 
-        // 3. Mapear FichaTecnica DTO a Entidad
         FichaTecnicaRequestDTO fichaDTO = dto.getAuto().getFichaTecnica();
         FichaTecnica fichaTecnica = new FichaTecnica();
         fichaTecnica.setMotor(fichaDTO.getMotor());
@@ -80,7 +73,6 @@ public class PublicacionService {
         fichaTecnica.setPotencia(fichaDTO.getPotencia());
         FichaTecnica fichaGuardada = fichaTecnicaRepository.save(fichaTecnica);
 
-        // 4. Mapear Auto DTO a Entidad
         AutoRequestDTO autoDTO = dto.getAuto();
         Auto auto = new Auto();
         auto.setMarca(autoDTO.getMarca());
@@ -89,20 +81,16 @@ public class PublicacionService {
         auto.setAnio(autoDTO.getAnio());
         auto.setKm(autoDTO.getKm());
         auto.setColor(autoDTO.getColor());
-        auto.setFichaTecnica(fichaGuardada); // Asignamos la ficha ya guardada
-
-        // --- ASIGNAR IMÁGENES AL AUTO ---
+        auto.setFichaTecnica(fichaGuardada);
         auto.setImagenesUrl(imageUrls);
 
         Auto autoGuardado = autoRepository.save(auto);
 
-        // 3. Mapear Publicacion DTO a Entidad
         Publicacion publicacion = new Publicacion();
         publicacion.setDescripcion(dto.getDescripcion());
-        publicacion.setAuto(autoGuardado); // Asignamos el auto ya guardado
-        publicacion.setVendedor(vendedor); // Asignamos el vendedor
+        publicacion.setAuto(autoGuardado);
+        publicacion.setVendedor(vendedor);
 
-        // 4. Asignar estados por defecto
         if(vendedor.getRol() == Rol.ADMIN){
             publicacion.setEstado(EstadoPublicacion.ACEPTADA);
             publicacion.setTipoPublicacion(TipoPublicacion.CONCESIONARIA);
@@ -111,37 +99,30 @@ public class PublicacionService {
             publicacion.setTipoPublicacion(TipoPublicacion.USUARIO);
 
             emailService.sendEmail(vendedor.getEmail(),"Publicación creada","Tu publicación en 'MyCar' ha sido realizada, estará pendiente de aceptación.");
-
-
         }
 
         Publicacion publicacionGuardada = publicacionRepository.save(publicacion);
 
-        // 5. Convertir la Entidad guardada a DTO de respuesta
         return PublicacionMapper.toResponseDTO(publicacionGuardada);
     }
 
     @Transactional
     public PublicacionResponseDTO putPublicacion(Long idPublicacion, PublicacionRequestDTO dto, List<MultipartFile> files, String emailVendedor){
-        // 1. Buscar la publicación existente
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
         Usuario vendedor = usuarioRepository.findByemail(emailVendedor)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no valido."));
 
-        // 2. Verificar permisos - con validaciones mejoradas
         Usuario vendedorPublicacion = publicacionExistente.getVendedor();
 
         if(vendedorPublicacion == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "La publicacion no tiene vendedor asignado");
         }
 
-        // Comparar IDs usando Long para evitar problemas de tipos
         Long idVendedorPublicacion = vendedorPublicacion.getId();
         Long idVendedorActual = vendedor.getId();
 
-        // También comparar por email como respaldo
         boolean mismoVendedor = idVendedorPublicacion != null && idVendedorActual != null
                 && idVendedorPublicacion.equals(idVendedorActual);
 
@@ -156,15 +137,12 @@ public class PublicacionService {
                             ", Vendedor actual: " + (vendedor.getEmail() != null ? vendedor.getEmail() : "null"));
         }
 
-        // 3. Si la publicación estaba ACEPTADA, cambiar a PENDIENTE para nueva revisión solo si es USUARIO.
         if(vendedor.getRol() == Rol.USUARIO && (publicacionExistente.getEstado() == EstadoPublicacion.ACEPTADA || publicacionExistente.getEstado() == EstadoPublicacion.RECHAZADA)){
             publicacionExistente.setEstado(EstadoPublicacion.PENDIENTE);
         }
 
         Auto autoExistente = publicacionExistente.getAuto();
         FichaTecnica fichaExistente = autoExistente.getFichaTecnica();
-
-        // 4. Actualizar solo los campos que vienen en el DTO (actualización parcial)
 
         if(dto.getDescripcion() != null && !dto.getDescripcion().trim().isEmpty()){
             publicacionExistente.setDescripcion(dto.getDescripcion().trim());
@@ -213,10 +191,8 @@ public class PublicacionService {
             }
         }
 
-        // 5. Manejo de archivos (¡ACÁ ESTÁ LA MAGIA PARA COMBINAR VIEJOS Y NUEVOS!)
         List<String> urlsCombinadas = new ArrayList<>();
 
-        // a) Rescatar las URLs viejas que mandó el frontend (las que no se borraron)
         if (dto.getAuto() != null && dto.getAuto().getImagenesUrl() != null) {
             for (String urlVieja : dto.getAuto().getImagenesUrl()) {
                 if (urlVieja != null && !urlVieja.trim().isEmpty()) {
@@ -227,7 +203,6 @@ public class PublicacionService {
             }
         }
 
-        // b) Procesar los archivos nuevos y sumarlos a la lista
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
@@ -237,10 +212,8 @@ public class PublicacionService {
             }
         }
 
-        // c) Le asignamos la lista final (viejos + nuevos) al auto
         autoExistente.setImagenesUrl(urlsCombinadas);
 
-        // 6. Guardar los cambios
         if(fichaExistente != null) {
             fichaTecnicaRepository.save(fichaExistente);
         }
@@ -261,7 +234,6 @@ public class PublicacionService {
 
         Usuario vendedorPublicacion = publicacionExistente.getVendedor();
 
-        // 3. Validación CLAVE: Evitar el NullPointerException si es una publicación de prueba vieja
         if (vendedorPublicacion == null) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "La publicacion está rota (no tiene vendedor asignado en la BD). Eliminála manualmente desde la base de datos.");
         }
@@ -354,13 +326,11 @@ public class PublicacionService {
         
         int limit = 0;
         for (Object[] row : topMarcasResult) {
-            if (limit >= 5) break; // Solo top 5
+            if (limit >= 5) break;
             String marca = (String) row[0];
             Long count = (Long) row[1];
-            // Normalizar marca
             marca = marca.trim();
             marca = marca.substring(0, 1).toUpperCase() + marca.substring(1).toLowerCase();
-            // Sumar al map
             topMarcasMap.put(marca, topMarcasMap.getOrDefault(marca, 0L) + count);
             limit++;
         }
@@ -381,13 +351,11 @@ public class PublicacionService {
         Publicacion publicacionExistente = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Publicacion no encontrada"));
 
-        // PRIMERO: Eliminar todas las reservas asociadas a esta publicación
         List<Reserva> reservas = reservaRepository.findByPublicacion_Id(idPublicacion);
         if (reservas != null && !reservas.isEmpty()) {
             reservaRepository.deleteAll(reservas);
         }
 
-        // SEGUNDO: Eliminar la publicación y sus entidades relacionadas
         Auto auto = publicacionExistente.getAuto();
         FichaTecnica ficha = (auto != null) ? auto.getFichaTecnica() : null;
 

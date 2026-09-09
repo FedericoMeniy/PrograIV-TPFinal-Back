@@ -7,12 +7,8 @@ import java.time.LocalDateTime;
 public class ConversacionResumenDTO {
     private Long conversacionId;
     private Long publicacionId;
-
-    // Aca guardamos el email de la OTRA persona (para saber con quien hablo)
     private String emailContacto;
-
-    // Para que Angular sepa si en este chat soy el duenio del auto o el interesado
-    private String rol; // "COMPRADOR" o "VENDEDOR"
+    private String rol;
     private String nombreContacto;
     private String ultimoMensaje;
     private LocalDateTime fechaUltimoMensaje;

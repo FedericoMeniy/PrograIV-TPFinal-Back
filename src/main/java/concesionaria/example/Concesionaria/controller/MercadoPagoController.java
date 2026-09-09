@@ -15,13 +15,10 @@ public class MercadoPagoController {
 
     @PostMapping("/mercadopago")
     public ResponseEntity<Void> recibirNotificacion(@RequestParam("reserva_id") Long reserva_id,@RequestParam("topic") String topic,@RequestParam("id") String id){
-        // Solo procesamos si es una notificación de pago.
         if ("payment".equals(topic)) {
-            // Pasamos el ID de la reserva y el ID de pago de Mercado Pago al servicio
             reservaService.procesarNotificacionDePago(reserva_id, id);
         }
 
-        // ¡CRUCIAL! Se debe devolver un 200 OK para evitar que Mercado Pago reintente la notificación
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

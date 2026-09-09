@@ -1,6 +1,5 @@
 package concesionaria.example.Concesionaria.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
@@ -12,13 +11,9 @@ import com.mercadopago.resources.preference.Preference;
 import concesionaria.example.Concesionaria.entity.Publicacion;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-// 👇 NUEVOS IMPORTS PARA EL TIEMPO
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -27,8 +22,10 @@ public class MercadoPagoService {
 
     @Value("${frontend.url}")
     private String frontendURL;
+
     @Value("${backend.base-url}")
     private String backendURL;
+
     @Value("${mercadopago.access-token.private}")
     private String accessToken;
 
@@ -38,7 +35,6 @@ public class MercadoPagoService {
         System.out.println(accessToken);
 
         try {
-            // 1) Ítem
             PreferenceItemRequest preferenceItemRequest = PreferenceItemRequest.builder()
                     .title("Reserva del auto: " + publicacion.getAuto().getMarca() + " " + publicacion.getAuto().getModelo())
                     .quantity(1)
@@ -46,21 +42,17 @@ public class MercadoPagoService {
                     .currencyId("ARS")
                     .build();
 
-            // 2) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                     .success(frontendURL + "pago-exitoso")
                     .failure(frontendURL + "pago-fallido")
                     .pending(frontendURL + "pago-pendiente")
                     .build();
 
-            // 3) Webhook
             String notificacionURL = backendURL + "notificacion/mercadopago?reserva_id=" + reservaId;
 
-            // 4) Preference Request
             List<PreferenceItemRequest> items = new ArrayList<>();
             items.add(preferenceItemRequest);
 
-            // 🔥 ACÁ CALCULAMOS LOS 10 MINUTOS EXTRA DESDE AHORA (EN FORMATO UTC PARA MP)
             OffsetDateTime fechaExpiracion = OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(2);
 
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
@@ -68,16 +60,9 @@ public class MercadoPagoService {
                     .externalReference(reservaId.toString())
                     .backUrls(backUrls)
                     .notificationUrl(notificacionURL)
-                    // 🔥 ACÁ LE PASAMOS LA FECHA DE VENCIMIENTO A MERCADO PAGO
                     .expires(true)
                     .dateOfExpiration(fechaExpiracion)
                     .build();
-
-
-
-            // -------------------------------
-            // 🔥 ACÁ VA EL TRY/CATCH ESPECIAL
-            // -------------------------------
 
             PreferenceClient client = new PreferenceClient();
 
@@ -106,7 +91,6 @@ public class MercadoPagoService {
         try {
             MercadoPagoConfig.setAccessToken(accessToken);
             PaymentClient client = new PaymentClient();
-            // El ID debe convertirse a Long para la consulta
             return client.get(Long.valueOf(paymentId));
         } catch (Exception e) {
             System.err.println("Error al obtener detalles del pago " + paymentId + ": " + e.getMessage());

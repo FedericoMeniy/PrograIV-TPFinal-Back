@@ -6,7 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,9 +42,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
-        // Las solicitudes OPTIONS (preflight CORS) ya son manejadas por CorsFilterConfig
-        // y nunca llegan hasta aquí.
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
@@ -95,18 +90,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (JwtException e) {
-            // Token inválido, malformado o con firma incorrecta — limpiamos el contexto
             log.warn("[JWT] Token JWT inválido o expirado: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         } catch (Exception e) {
-            // Error de infraestructura (BD remota caída, timeout de conexión, etc.)
-            // NO limpiamos el contexto de seguridad — simplemente logueamos el error
             log.error("[JWT] ERROR al validar token (posible problema de BD/red): {} - {}",
                     e.getClass().getSimpleName(), e.getMessage(), e);
-            // No hacemos clearContext() aquí para no destruir autenticaciones previas
-            // Spring Security rechazará el request si el endpoint requiere auth
         }
 
         filterChain.doFilter(request, response);
     }
-}
+}

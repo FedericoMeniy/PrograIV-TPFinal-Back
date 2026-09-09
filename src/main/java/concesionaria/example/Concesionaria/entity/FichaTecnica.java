@@ -9,9 +9,11 @@ import lombok.Data;
 @Data
 @Entity
 public class FichaTecnica {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String motor;
     private String combustible;
     private String caja;

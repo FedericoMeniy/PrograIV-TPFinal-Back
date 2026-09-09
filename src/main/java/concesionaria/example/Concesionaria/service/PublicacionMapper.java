@@ -6,17 +6,11 @@ import concesionaria.example.Concesionaria.dto.PublicacionResponseDTO;
 import concesionaria.example.Concesionaria.entity.Auto;
 import concesionaria.example.Concesionaria.entity.FichaTecnica;
 import concesionaria.example.Concesionaria.entity.Publicacion;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Clase de ayuda (Utility) para convertir Entidades a DTOs de respuesta.
- */
 public class PublicacionMapper {
 
-    // Convierte UNA Publicacion (Entidad) a UNA PublicacionResponseDTO
-    // Convierte UNA Publicacion (Entidad) a UNA PublicacionResponseDTO
     public static PublicacionResponseDTO toResponseDTO(Publicacion publicacion) {
         PublicacionResponseDTO dto = new PublicacionResponseDTO();
         dto.setId(publicacion.getId());
@@ -25,17 +19,13 @@ public class PublicacionMapper {
         dto.setTipoPublicacion(publicacion.getTipoPublicacion());
 
         if (publicacion.getVendedor() != null) {
-            // Mapeo del nombre del vendedor (ya existía)
             dto.setNombreVendedor(publicacion.getVendedor().getNombre());
-
-            // Mapeo del teléfono del vendedor
             dto.setVendedorTelefono(publicacion.getVendedor().getTelefono());
-
-            // 🔥 ESTA ES LA LÍNEA QUE TE FALTA PARA QUE FUNCIONE EL CHAT 🔥
             dto.setEmailVendedor(publicacion.getVendedor().getEmail());
         }
 
         dto.setAuto(toAutoResponseDTO(publicacion.getAuto()));
+
         return dto;
     }
 

@@ -6,17 +6,18 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Data
 @Entity
-public class Usuario implements UserDetails { // Implementar UserDetails
+public class Usuario implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String nombre;
     private String email;
     private String password;
@@ -39,13 +40,11 @@ public class Usuario implements UserDetails { // Implementar UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // CORRECCIÓN: Se añade el prefijo ROLE_ al nombre del rol.
         return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));
     }
 
     @Override
     public String getUsername() {
-        // Usamos el email como el identificador único (username)
         return email;
     }
 
@@ -68,5 +67,4 @@ public class Usuario implements UserDetails { // Implementar UserDetails
     public boolean isEnabled() {
         return true;
     }
-
 }

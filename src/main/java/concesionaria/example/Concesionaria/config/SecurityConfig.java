@@ -61,7 +61,6 @@ public class SecurityConfig {
                         .requestMatchers("/usuario/login/google", "/usuario/registro/google").permitAll()
                         .requestMatchers("/usuario/login", "/usuario/registro").permitAll()
                         .requestMatchers("/conversacion/**").authenticated()
-                        // Nuevo recuperar cuenta //
                         .requestMatchers(HttpMethod.POST, "/usuario/olvide-password", "/usuario/restablecer-password").permitAll()
                         .anyRequest().authenticated()
 
@@ -73,7 +72,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Agrego link de Vercel
         configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "https://my-car-tesis-front-rouge.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
