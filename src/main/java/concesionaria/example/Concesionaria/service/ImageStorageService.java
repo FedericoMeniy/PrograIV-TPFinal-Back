@@ -41,12 +41,12 @@ public class ImageStorageService {
                     lower.endsWith(".avi") || lower.endsWith(".webm")) {
                     resourceType = "video";
                 }
-                else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
-                        lower.endsWith(".png") || lower.endsWith(".webp")) {
+                else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".jfif") ||
+                        lower.endsWith(".png") || lower.endsWith(".webp"))  {
                     resourceType = "image";
                 }
                 else {
-                    throw new RuntimeException("Formato no soportado. Subí una foto (.jpg, .jpeg, .png y .webp) o un video (.mp4, .mov, .avi y .webm).");
+                    throw new RuntimeException("Formato no soportado. Subí una foto (.jpg, .jpeg, .png, .jfif y .webp) o un video (.mp4, .mov, .avi y .webm).");
                 }
             }else {
                 throw new RuntimeException("El archivo no tiene un nombre válido.");
