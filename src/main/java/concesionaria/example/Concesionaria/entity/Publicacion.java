@@ -17,7 +17,10 @@ public class Publicacion {
 
     @OneToOne
     private Auto auto;
+
+    @Column(length = 1000)
     private String descripcion;
+
     private EstadoPublicacion estado;
     private TipoPublicacion tipoPublicacion;
 }
